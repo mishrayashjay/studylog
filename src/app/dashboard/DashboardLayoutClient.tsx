@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/client'
-import { BookOpen, LogOut, Menu, LayoutDashboard, Clock, History, Settings } from 'lucide-react'
+import { BookOpen, LogOut, Menu, LayoutDashboard, Clock, History, Settings, X } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
 import ThemeToggle from '@/components/ThemeToggle'
 import { useDashboard } from '@/context/DashboardContext'
@@ -20,21 +20,8 @@ export default function DashboardLayoutClient({ children, user }: DashboardLayou
   const supabase = createClient()
   const { profile } = useDashboard()
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const [isMobile, setIsMobile] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Closed by default on both desktop and mobile
   const [currentTime, setCurrentTime] = useState<string>('')
-
-  // Listen to window size to adapt sidebar responsive state
-  useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768
-      setIsMobile(mobile)
-      setIsSidebarOpen(!mobile) // Open on desktop, closed on mobile by default
-    }
-    handleResize()
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
 
   // Start real-time clock tick
   useEffect(() => {
@@ -72,34 +59,27 @@ export default function DashboardLayoutClient({ children, user }: DashboardLayou
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ]
 
-  // Close sidebar on mobile after clicking a link
-  const handleLinkClick = () => {
-    if (isMobile) {
-      setIsSidebarOpen(false)
-    }
-  }
-
   return (
     <div className="min-h-screen bg-warmbg dark:bg-darkbg text-warmtext dark:text-darktext flex flex-col">
       {/* Background glow effects */}
-      <div className="absolute top-0 right-1/4 w-[300px] h-[300px] rounded-full bg-indigo-500/5 dark:bg-indigo-500/5 blur-[100px] pointer-events-none -z-10 animate-pulse duration-8000" />
-      <div className="absolute bottom-10 left-1/4 w-[300px] h-[300px] rounded-full bg-purple-500/5 dark:bg-purple-500/5 blur-[100px] pointer-events-none -z-10 animate-pulse duration-10000" />
+      <div className="absolute top-0 right-1/4 w-[300px] h-[300px] rounded-full bg-indigo-500/5 dark:bg-indigo-500/5 blur-[100px] pointer-events-none -z-10" />
+      <div className="absolute bottom-10 left-1/4 w-[300px] h-[300px] rounded-full bg-purple-500/5 dark:bg-purple-500/5 blur-[100px] pointer-events-none -z-10" />
 
-      {/* Top Navigation Bar - starts flush at the very left edge */}
-      <nav className="sticky top-0 z-50 border-b border-warmborder dark:border-white/10 bg-warmbg/80 dark:bg-darkbg/80 backdrop-blur-md h-[69px] flex items-center px-6">
+      {/* Top Navigation Bar - flush to left edge */}
+      <nav className="sticky top-0 z-30 border-b border-warmborder dark:border-white/10 bg-warmbg/80 dark:bg-darkbg/80 backdrop-blur-md h-[69px] flex items-center px-6">
         <div className="w-full flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {/* Hamburger Toggle */}
+            {/* Hamburger Toggle button */}
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-2 hover:bg-warmbg dark:hover:bg-white/10 rounded-lg text-warmtext/70 dark:text-darktext/75 hover:text-warmtext dark:hover:text-darktext transition-colors"
-              aria-label="Toggle Sidebar"
+              aria-label="Toggle Sidebar Menu"
             >
               <Menu className="h-5 w-5" />
             </button>
 
             <div className="flex items-center gap-2.5 ml-2">
-              <div className="p-1.5 bg-indigo-600 dark:bg-indigo-500 rounded-lg text-white shadow-sm shadow-indigo-600/10">
+              <div className="p-1.5 bg-indigo-600 dark:bg-indigo-50 rounded-lg text-white shadow-sm">
                 <BookOpen className="h-4 w-4" />
               </div>
               <span className="font-bold text-base tracking-tight font-display">studylog</span>
@@ -128,60 +108,76 @@ export default function DashboardLayoutClient({ children, user }: DashboardLayou
         </div>
       </nav>
 
-      {/* Main Grid: Sidebar + Content */}
+      {/* Main Grid: Content wrapper */}
       <div className="flex-1 flex relative">
-        {/* Mobile Drawer Overlay */}
-        {isMobile && isSidebarOpen && (
+        {/* Full-width main container (no sidebars permanently showing) */}
+        <main className="flex-grow p-6 md:p-8 w-full relative">
+          {children}
+        </main>
+
+        {/* Semi-transparent dark overlay behind drawer */}
+        {isSidebarOpen && (
           <div
             onClick={() => setIsSidebarOpen(false)}
-            className="fixed inset-0 z-30 bg-slate-950/40 backdrop-blur-sm transition-opacity duration-300"
+            className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-xs transition-opacity duration-300 ease-out"
           />
         )}
 
-        {/* Sidebar Navigation - starts flush at left edge, collapsible */}
+        {/* Slide-out drawer navigation (hidden by default, open on click) */}
         <aside
-          className={`z-40 border-r border-warmborder dark:border-white/10 bg-[#FDFCFB] dark:bg-darkbg transition-all duration-300 ease-in-out flex flex-col justify-between p-4 shrink-0 ${
-            isMobile
-              ? `fixed left-0 top-[69px] h-[calc(100vh-69px)] ${isSidebarOpen ? 'w-64 translate-x-0' : 'w-0 -translate-x-full pointer-events-none p-0 border-r-0'}`
-              : `sticky top-[69px] h-[calc(100vh-69px)] overflow-y-auto ${isSidebarOpen ? 'w-64' : 'w-16 px-2'}`
+          className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#FDFCFB] dark:bg-darkbg border-r border-warmborder dark:border-white/10 p-6 flex flex-col justify-between shadow-2xl transition-transform duration-300 ease-out transform ${
+            isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
-          <div className="space-y-1.5 w-full">
-            {navLinks.map((link) => {
-              const isActive =
-                link.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(link.href)
+          <div className="space-y-6 w-full">
+            {/* Drawer Brand Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-warmborder/60 dark:border-white/10">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-indigo-600 dark:bg-indigo-50 rounded-lg text-white shadow-sm">
+                  <BookOpen className="h-4 w-4" />
+                </div>
+                <span className="font-bold text-lg tracking-tight font-display">studylog</span>
+              </div>
+              {/* Close icon button inside drawer */}
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                className="p-1.5 hover:bg-warmbg dark:hover:bg-white/10 rounded-lg text-warmtext/50 dark:text-darktext/50 hover:text-warmtext dark:hover:text-darktext transition-colors"
+                aria-label="Close Sidebar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
 
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={handleLinkClick}
-                  className={`flex items-center rounded-xl text-sm font-bold transition-colors duration-75 ${
-                    isSidebarOpen ? 'gap-3 px-4 py-3' : 'justify-center p-3'
-                  } ${
-                    isActive
-                      ? 'bg-indigo-600 dark:bg-indigo-500 text-white shadow-sm shadow-indigo-600/10'
-                      : 'text-warmtext/60 dark:text-darktext/50 hover:bg-warmbg dark:hover:bg-white/10 hover:text-warmtext dark:hover:text-darktext'
-                  }`}
-                  title={!isSidebarOpen ? link.name : undefined}
-                >
-                  <link.icon className="h-4.5 w-4.5 shrink-0" />
-                  {isSidebarOpen && <span className="truncate">{link.name}</span>}
-                </Link>
-              )
-            })}
+            {/* Large, touch-friendly nav links */}
+            <div className="space-y-2">
+              {navLinks.map((link) => {
+                const isActive =
+                  link.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(link.href)
+
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setIsSidebarOpen(false)}
+                    className={`flex items-center gap-3.5 px-4.5 py-3.5 rounded-xl text-base font-bold transition-colors duration-150 ${
+                      isActive
+                        ? 'bg-indigo-600 dark:bg-indigo-500 text-white shadow-md shadow-indigo-600/10'
+                        : 'text-warmtext/60 dark:text-darktext/50 hover:bg-warmbg dark:hover:bg-white/10 hover:text-warmtext dark:hover:text-darktext'
+                    }`}
+                  >
+                    <link.icon className="h-5.5 w-5.5 shrink-0" />
+                    <span>{link.name}</span>
+                  </Link>
+                )
+              })}
+            </div>
           </div>
 
-          {/* Footer inside sidebar */}
-          <div className="pt-4 border-t border-warmborder/60 dark:border-white/10 text-center text-[10px] text-warmtext/40 dark:text-darktext/40">
-            {isSidebarOpen ? `© ${new Date().getFullYear()} studylog` : '©'}
+          {/* Drawer Copyright Footer */}
+          <div className="pt-4 border-t border-warmborder/60 dark:border-white/10 text-center text-xs text-warmtext/40 dark:text-darktext/40">
+            &copy; {new Date().getFullYear()} studylog
           </div>
         </aside>
-
-        {/* Main Content Area - occupies remaining screen width */}
-        <main className="flex-1 min-w-0 p-6 md:p-8 w-full relative">
-          {children}
-        </main>
       </div>
 
       {/* Floating Real-Time Clock */}
