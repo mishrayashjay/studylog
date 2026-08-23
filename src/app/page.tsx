@@ -1,12 +1,14 @@
 import Link from "next/link";
-import { BookOpen, Clock, Activity, ShieldCheck, ChevronRight } from "lucide-react";
+import { BookOpen, Clock, Activity, ShieldCheck, ChevronRight, Square, Award, RotateCcw, Pause } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-darkbg text-slate-900 dark:text-slate-100 flex flex-col font-sans relative overflow-x-hidden transition-colors duration-200">
-      {/* Background Glow Effect */}
-      <div className="absolute top-[-100px] left-1/2 -translate-x-1/2 w-[400px] h-[400px] sm:w-[600px] sm:h-[600px] rounded-full bg-indigo-500/10 dark:bg-indigo-600/10 blur-[100px] pointer-events-none -z-10" />
+      {/* Background Grid & Glows */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(99,102,241,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(99,102,241,0.03)_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,rgba(99,102,241,0.015)_1px,transparent_1px),linear-gradient(to_bottom,rgba(99,102,241,0.015)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none -z-10" />
+      <div className="absolute top-[-150px] left-1/2 -translate-x-1/2 w-[400px] h-[400px] sm:w-[600px] sm:h-[600px] rounded-full bg-indigo-500/10 dark:bg-indigo-600/10 blur-[120px] pointer-events-none -z-10 animate-pulse duration-5000" />
+      <div className="absolute top-[250px] right-[-100px] w-[300px] h-[300px] rounded-full bg-purple-500/5 dark:bg-purple-600/5 blur-[80px] pointer-events-none -z-10 animate-pulse duration-7000" />
 
       {/* Header */}
       <header className="border-b border-slate-200 dark:border-white/10 bg-white/70 dark:bg-darkbg/70 backdrop-blur-md sticky top-0 z-50 transition-colors duration-200">
@@ -37,7 +39,9 @@ export default function Home() {
 
       {/* Hero Section */}
       <main className="flex-1 flex flex-col justify-center max-w-5xl mx-auto px-6 py-20 sm:py-28 text-center z-10">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-full text-xs font-semibold text-indigo-600 dark:text-indigo-400 mx-auto animate-fade-in">
+        {/* Shimmer Badge */}
+        <div className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-full text-xs font-bold text-indigo-600 dark:text-indigo-400 mx-auto transition-all duration-300 shadow-sm shadow-indigo-500/10 hover:shadow-indigo-500/20 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
           <span>Introducing studylog 2.0</span>
           <ChevronRight className="h-3 w-3" />
         </div>
@@ -65,6 +69,101 @@ export default function Home() {
           >
             Log In
           </Link>
+        </div>
+
+        {/* Counter Metrics */}
+        <div className="mt-16 grid grid-cols-3 gap-4 max-w-lg mx-auto text-slate-500 dark:text-slate-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+          <div className="flex flex-col items-center p-3 rounded-xl bg-white/40 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 backdrop-blur-sm">
+            <span className="text-xl sm:text-2xl font-black text-indigo-600 dark:text-indigo-400 font-display">2,400+</span>
+            <span className="mt-1 text-[9px] text-slate-400 dark:text-slate-500">Hours Logged</span>
+          </div>
+          <div className="flex flex-col items-center p-3 rounded-xl bg-white/40 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 backdrop-blur-sm">
+            <span className="text-xl sm:text-2xl font-black text-indigo-600 dark:text-indigo-400 font-display">12,000+</span>
+            <span className="mt-1 text-[9px] text-slate-400 dark:text-slate-500">Sessions</span>
+          </div>
+          <div className="flex flex-col items-center p-3 rounded-xl bg-white/40 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 backdrop-blur-sm">
+            <span className="text-xl sm:text-2xl font-black text-indigo-600 dark:text-indigo-400 font-display">99.9%</span>
+            <span className="mt-1 text-[9px] text-slate-400 dark:text-slate-500">Study Uptime</span>
+          </div>
+        </div>
+
+        {/* Interactive Dashboard Preview Mockup */}
+        <div className="mt-16 relative mx-auto w-full max-w-3xl rounded-2xl border border-slate-200 dark:border-white/10 p-2 bg-slate-100 dark:bg-white/5 shadow-2xl shadow-indigo-500/5">
+          <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-darkbg flex flex-col text-left aspect-[16/10]">
+            {/* Mock Nav Bar */}
+            <div className="border-b border-slate-200/60 dark:border-white/10 px-4 py-3 flex items-center justify-between bg-slate-50 dark:bg-white/5">
+              <div className="flex items-center gap-2">
+                <div className="p-1 bg-indigo-600 dark:bg-indigo-500 rounded text-white">
+                  <BookOpen className="h-3.5 w-3.5" />
+                </div>
+                <span className="font-bold text-xs">studylog</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-16 h-4 bg-slate-200 dark:bg-white/10 rounded-full" />
+                <div className="w-8 h-4 bg-slate-200 dark:bg-white/10 rounded-full" />
+              </div>
+            </div>
+            {/* Mock Body Grid */}
+            <div className="flex-1 p-4 grid grid-cols-12 gap-4 overflow-hidden bg-slate-50/50 dark:bg-darkbg">
+              {/* Left Column: Timer */}
+              <div className="col-span-5 space-y-4">
+                <div className="bg-white dark:bg-white/5 p-4 rounded-xl border border-slate-200 dark:border-white/10 flex flex-col items-center">
+                  <div className="w-24 h-24 rounded-full border-4 border-indigo-600/20 dark:border-indigo-500/20 border-t-indigo-600 dark:border-t-indigo-500 flex flex-col items-center justify-center relative">
+                    <span className="font-mono text-base font-extrabold">25:00</span>
+                    <span className="text-[7px] text-slate-400 uppercase tracking-widest mt-0.5">Focusing</span>
+                  </div>
+                  <div className="flex gap-2 mt-3.5">
+                    <div className="p-1.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-400"><RotateCcw className="h-3 w-3" /></div>
+                    <div className="p-2 rounded-full bg-indigo-600 dark:bg-indigo-500 text-white"><Pause className="h-3.5 w-3.5 fill-white" /></div>
+                    <div className="p-1.5 rounded-full bg-emerald-600 dark:bg-emerald-50 text-white"><Square className="h-3 w-3 fill-white" /></div>
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-white/5 p-3.5 rounded-xl border border-slate-200 dark:border-white/10 h-20" />
+              </div>
+              {/* Right Column: Stats & Breakdown */}
+              <div className="col-span-7 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white dark:bg-white/5 p-3.5 rounded-xl border border-slate-200 dark:border-white/10 flex items-center gap-3">
+                    <Clock className="h-5 w-5 text-indigo-500 shrink-0" />
+                    <div>
+                      <div className="text-[7px] text-slate-400 uppercase">This Week</div>
+                      <div className="text-sm font-extrabold">12.5h</div>
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-white/5 p-3.5 rounded-xl border border-slate-200 dark:border-white/10 flex items-center gap-3">
+                    <Award className="h-5 w-5 text-amber-500 shrink-0" />
+                    <div>
+                      <div className="text-[7px] text-slate-400 uppercase">Streak</div>
+                      <div className="text-sm font-extrabold">6 days</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-white/5 p-4 rounded-xl border border-slate-200 dark:border-white/10 flex-1 flex flex-col justify-between">
+                  <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider mb-2">Time by Subject</div>
+                  <div className="space-y-2">
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[9px] font-bold text-slate-600 dark:text-slate-400">
+                        <span>Computer Science</span>
+                        <span>70%</span>
+                      </div>
+                      <div className="h-1 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
+                        <div className="h-full bg-indigo-500 rounded-full w-[70%]" />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[9px] font-bold text-slate-600 dark:text-slate-400">
+                        <span>Mathematics</span>
+                        <span>30%</span>
+                      </div>
+                      <div className="h-1 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-500 rounded-full w-[30%]" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Feature Cards Grid */}
