@@ -12,7 +12,14 @@ export default function Timer({ onTimerStop }: TimerProps) {
   const [isRunning, setIsRunning] = useState(false)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Clean up interval on unmount
+  // Circular progress configuration
+  const radius = 80
+  const strokeWidth = 8
+  const circumference = 2 * Math.PI * radius // ~502.65
+  const targetSeconds = 3600 // Progress bar completes at 60 mins
+  const progress = Math.min(seconds / targetSeconds, 1)
+  const strokeDashoffset = circumference - progress * circumference
+
   useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
@@ -64,60 +71,91 @@ export default function Timer({ onTimerStop }: TimerProps) {
   }
 
   return (
-    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
+    <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-colors duration-200 flex flex-col items-center">
       <div className="flex items-center gap-1.5 self-start mb-4">
         <Flame className={`h-4.5 w-4.5 ${isRunning ? 'text-amber-500 animate-pulse' : 'text-slate-400'}`} />
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">Focus Timer</h2>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Focus Session</h2>
       </div>
 
-      {/* Timer Screen */}
-      <div className="my-4 text-center">
-        <div className={`font-mono text-5xl font-extrabold tracking-tight tabular-nums select-none ${isRunning ? 'text-indigo-600' : 'text-slate-800'}`}>
-          {formatTime(seconds)}
+      {/* Circular Progress Ring */}
+      <div className="relative my-4 flex items-center justify-center">
+        {/* SVG Progress Ring */}
+        <svg className="w-56 h-56 transform -rotate-90" width="220" height="220">
+          {/* Background circle */}
+          <circle
+            className="text-slate-100 dark:text-white/10 transition-colors duration-200"
+            stroke="currentColor"
+            strokeWidth={strokeWidth}
+            fill="transparent"
+            r={radius}
+            cx="110"
+            cy="110"
+          />
+          {/* Foreground progress circle */}
+          <circle
+            className="text-indigo-600 dark:text-indigo-500 transition-all duration-300 ease-in-out"
+            stroke="currentColor"
+            strokeWidth={strokeWidth}
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            fill="transparent"
+            r={radius}
+            cx="110"
+            cy="110"
+          />
+        </svg>
+
+        {/* Text inside Circle */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+          <span className={`font-mono text-3xl font-extrabold tracking-tight tabular-nums select-none ${isRunning ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-800 dark:text-slate-100'}`}>
+            {formatTime(seconds)}
+          </span>
+          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">
+            {isRunning ? 'Focusing' : 'Ready'}
+          </span>
         </div>
-        {isRunning && (
-          <p className="text-xs text-indigo-500 font-semibold mt-2 animate-pulse">
-            Session in progress...
-          </p>
-        )}
       </div>
 
-      {/* Control Buttons */}
-      <div className="flex items-center justify-center gap-3 w-full mt-4">
+      {/* Circular control buttons */}
+      <div className="flex items-center justify-center gap-4 w-full mt-6">
+        {/* Reset button */}
+        <button
+          onClick={resetTimer}
+          disabled={seconds === 0}
+          className="p-3 rounded-full border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition-all duration-200 disabled:opacity-30 disabled:pointer-events-none"
+          title="Reset Stopwatch"
+        >
+          <RotateCcw className="h-4.5 w-4.5" />
+        </button>
+
+        {/* Play/Pause button */}
         {!isRunning ? (
           <button
             onClick={startTimer}
-            className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center justify-center gap-2 text-sm font-semibold transition-colors shadow-sm"
+            className="p-4 rounded-full bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 text-white flex items-center justify-center transition-all duration-200 shadow-md shadow-indigo-600/10 dark:shadow-indigo-500/5 hover:scale-105"
+            title="Start Focus"
           >
-            <Play className="h-4 w-4 fill-white" />
-            Start
+            <Play className="h-5 w-5 fill-white" />
           </button>
         ) : (
           <button
             onClick={pauseTimer}
-            className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg flex items-center justify-center gap-2 text-sm font-semibold transition-colors"
+            className="p-4 rounded-full bg-slate-800 dark:bg-white/10 hover:bg-slate-900 dark:hover:bg-white/20 text-white dark:text-slate-200 flex items-center justify-center transition-all duration-200 hover:scale-105"
+            title="Pause Focus"
           >
-            <Pause className="h-4 w-4 fill-slate-800" />
-            Pause
+            <Pause className="h-5 w-5 fill-white dark:fill-slate-200" />
           </button>
         )}
 
-        <button
-          onClick={resetTimer}
-          disabled={seconds === 0}
-          className="p-2 border border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-slate-600 rounded-lg disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
-          title="Reset Timer"
-        >
-          <RotateCcw className="h-4 w-4" />
-        </button>
-
+        {/* Stop and Log button */}
         <button
           onClick={stopAndLog}
           disabled={seconds === 0}
-          className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 disabled:hover:bg-emerald-600 rounded-lg flex items-center justify-center gap-2 text-sm font-semibold transition-colors shadow-sm"
+          className="p-3 rounded-full bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-600 text-white flex items-center justify-center transition-all duration-200 shadow-md shadow-emerald-600/10 dark:shadow-emerald-500/5 disabled:opacity-30 disabled:pointer-events-none hover:scale-105"
+          title="Stop & Log Focus"
         >
-          <Square className="h-4 w-4 fill-white" />
-          Log Session
+          <Square className="h-4.5 w-4.5 fill-white" />
         </button>
       </div>
     </div>

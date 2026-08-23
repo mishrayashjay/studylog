@@ -9,6 +9,7 @@ import Timer from './Timer'
 import QuickAddForm from './QuickAddForm'
 import Stats from './Stats'
 import SessionHistory from './SessionHistory'
+import ThemeToggle from './ThemeToggle'
 
 export interface StudySession {
   id: string
@@ -149,27 +150,34 @@ export default function DashboardClient({ user, profile, initialSessions }: Dash
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-12">
+    <div className="min-h-screen bg-slate-50 dark:bg-darkbg text-slate-900 dark:text-slate-100 font-sans pb-12 transition-colors duration-200">
+      {/* Background glow effects */}
+      <div className="absolute top-0 right-1/4 w-[300px] h-[300px] rounded-full bg-indigo-500/5 dark:bg-indigo-600/5 blur-[100px] pointer-events-none -z-10" />
+      <div className="absolute bottom-10 left-1/4 w-[300px] h-[300px] rounded-full bg-purple-500/5 dark:bg-purple-600/5 blur-[100px] pointer-events-none -z-10" />
+
       {/* Navigation Header */}
-      <nav className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-indigo-600 rounded-lg text-white">
-              <BookOpen className="h-5 w-5" />
+      <nav className="sticky top-0 z-40 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-darkbg/80 backdrop-blur-md transition-colors duration-200">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 bg-indigo-600 dark:bg-indigo-500 rounded-lg text-white shadow-sm shadow-indigo-600/10">
+              <BookOpen className="h-4.5 w-4.5" />
             </div>
-            <span className="font-bold text-xl tracking-tight">studylog</span>
+            <span className="font-bold text-lg tracking-tight font-display">studylog</span>
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="text-right hidden sm:block">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Signed in as</p>
-              <p className="text-sm font-bold text-slate-800">
+            <ThemeToggle />
+
+            <div className="text-right hidden sm:block border-l border-slate-200 dark:border-white/10 pl-4">
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Signed in as</p>
+              <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
                 {profile.full_name || profile.username || user?.email}
               </p>
             </div>
+
             <button
               onClick={handleSignOut}
-              className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-2 text-sm font-medium"
+              className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors flex items-center gap-2 text-sm font-semibold"
               title="Sign Out"
             >
               <LogOut className="h-4 w-4" />
@@ -180,14 +188,14 @@ export default function DashboardClient({ user, profile, initialSessions }: Dash
       </nav>
 
       {/* Main Container */}
-      <div className="max-w-6xl mx-auto px-4 mt-6 space-y-6">
+      <div className="max-w-6xl mx-auto px-6 mt-8 space-y-6 relative z-10">
         {/* Offline / Supabase Warning Banner */}
         {isOfflineMode && (
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm flex items-start gap-3">
-            <WifiOff className="h-5 w-5 shrink-0 text-amber-600 mt-0.5" />
+          <div className="p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl text-amber-800 dark:text-amber-400 text-sm flex items-start gap-3 transition-colors duration-200">
+            <WifiOff className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
             <div>
               <p className="font-bold">Offline / Local Mode Enabled</p>
-              <p className="mt-1 text-amber-700 leading-relaxed">
+              <p className="mt-1 text-amber-700 dark:text-amber-400/80 leading-relaxed text-xs">
                 Supabase URL & Anon Key are not configured in your <code>.env.local</code>. Data will be saved in your browser&apos;s local storage. Configure environment variables to enable cloud syncing.
               </p>
             </div>
@@ -198,10 +206,8 @@ export default function DashboardClient({ user, profile, initialSessions }: Dash
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Column: Timer & Log Form */}
           <div className="lg:col-span-5 space-y-6">
-            {/* Timer component */}
             <Timer onTimerStop={(duration) => setPrefilledDuration(duration)} />
 
-            {/* Quick Add Form component */}
             <QuickAddForm
               onAddSession={handleAddSession}
               prefilledDuration={prefilledDuration}
