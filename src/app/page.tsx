@@ -1,100 +1,99 @@
-import Image from "next/image";
+import Link from "next/link";
+import { BookOpen, Clock, Activity, ShieldCheck } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+      {/* Header */}
+      <header className="border-b border-slate-200 bg-white">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-indigo-600 rounded-lg text-white">
+              <BookOpen className="h-5 w-5" />
+            </div>
+            <span className="font-bold text-xl tracking-tight">studylog</span>
+          </div>
+          <div className="flex gap-4">
+            <Link
+              href="/login"
+              className="text-sm font-medium px-4 py-2 text-slate-600 hover:text-slate-900 transition-colors"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/login?tab=signup"
+              className="text-sm font-medium px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm"
+            >
+              Get Started
+            </Link>
+          </div>
+        </div>
+      </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      {/* Hero Section */}
+      <main className="flex-1 flex flex-col justify-center max-w-6xl mx-auto px-4 py-16 sm:py-24 text-center">
+        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900 max-w-3xl mx-auto leading-tight">
+          Track your study sessions. <br />
+          <span className="text-indigo-600">Build learning habits.</span>
+        </h1>
+        <p className="mt-6 text-lg sm:text-xl text-slate-500 max-w-2xl mx-auto">
+          A minimalist dashboard to log subjects, record focus times with a built-in stopwatch, monitor your daily streak, and analyze your weekly performance.
+        </p>
+
+        <div className="mt-10 flex flex-wrap justify-center gap-4">
+          <Link
+            href="/login?tab=signup"
+            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-colors text-base"
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            Create Your Account
+          </Link>
+          <Link
+            href="/login"
+            className="px-6 py-3 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium rounded-lg transition-colors text-base"
           >
-            Read our docs
-          </a>
+            Log In
+          </Link>
+        </div>
+
+        {/* Feature Cards Grid */}
+        <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+          <div className="p-6 bg-white rounded-xl border border-slate-200 shadow-sm">
+            <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg w-fit">
+              <Clock className="h-6 w-6" />
+            </div>
+            <h3 className="mt-4 font-bold text-lg text-slate-900">Built-in Focus Timer</h3>
+            <p className="mt-2 text-slate-500 text-sm leading-relaxed">
+              Start and stop focus sessions. The stopwatch automatically calculates your duration and populates the logging details.
+            </p>
+          </div>
+
+          <div className="p-6 bg-white rounded-xl border border-slate-200 shadow-sm">
+            <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg w-fit">
+              <Activity className="h-6 w-6" />
+            </div>
+            <h3 className="mt-4 font-bold text-lg text-slate-900">Habits & Analytics</h3>
+            <p className="mt-2 text-slate-500 text-sm leading-relaxed">
+              Maintain a study streak, visualize subject breakdowns, and compare weekly stats to see where your focus goes.
+            </p>
+          </div>
+
+          <div className="p-6 bg-white rounded-xl border border-slate-200 shadow-sm">
+            <div className="p-2.5 bg-amber-50 text-amber-600 rounded-lg w-fit">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <h3 className="mt-4 font-bold text-lg text-slate-900">Supabase Cloud Sync</h3>
+            <p className="mt-2 text-slate-500 text-sm leading-relaxed">
+              Secure authentication and storage. Your study logs and streak histories are synchronized instantly across all your devices.
+            </p>
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      {/* Footer */}
+      <footer className="border-t border-slate-200 bg-white py-8">
+        <div className="max-w-6xl mx-auto px-4 text-center text-slate-400 text-sm">
+          &copy; {new Date().getFullYear()} studylog. Built for focus.
+        </div>
       </footer>
     </div>
   );
