@@ -7,21 +7,18 @@ import { createClient } from '@/utils/supabase/client'
 import { BookOpen, LogOut, Menu, LayoutDashboard, Clock, History, Settings } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
 import ThemeToggle from '@/components/ThemeToggle'
+import { useDashboard } from '@/context/DashboardContext'
 
 interface DashboardLayoutClientProps {
   children: React.ReactNode
-  profile: {
-    id: string
-    username: string
-    full_name: string | null
-  }
   user: User | null
 }
 
-export default function DashboardLayoutClient({ children, profile, user }: DashboardLayoutClientProps) {
+export default function DashboardLayoutClient({ children, user }: DashboardLayoutClientProps) {
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
+  const { profile } = useDashboard()
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
@@ -68,7 +65,6 @@ export default function DashboardLayoutClient({ children, profile, user }: Dashb
     router.refresh()
   }
 
-  // Standalone "Log Session" link has been removed.
   const navLinks = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Focus Timer', href: '/dashboard/timer', icon: Clock },
@@ -84,13 +80,13 @@ export default function DashboardLayoutClient({ children, profile, user }: Dashb
   }
 
   return (
-    <div className="min-h-screen bg-warmbg dark:bg-darkbg text-warmtext dark:text-darktext flex flex-col transition-colors duration-300">
+    <div className="min-h-screen bg-warmbg dark:bg-darkbg text-warmtext dark:text-darktext flex flex-col">
       {/* Background glow effects */}
       <div className="absolute top-0 right-1/4 w-[300px] h-[300px] rounded-full bg-indigo-500/5 dark:bg-indigo-500/5 blur-[100px] pointer-events-none -z-10 animate-pulse duration-8000" />
       <div className="absolute bottom-10 left-1/4 w-[300px] h-[300px] rounded-full bg-purple-500/5 dark:bg-purple-500/5 blur-[100px] pointer-events-none -z-10 animate-pulse duration-10000" />
 
       {/* Top Navigation Bar - starts flush at the very left edge */}
-      <nav className="sticky top-0 z-50 border-b border-warmborder dark:border-white/10 bg-warmbg/80 dark:bg-darkbg/80 backdrop-blur-md transition-colors duration-300 h-[69px] flex items-center px-6">
+      <nav className="sticky top-0 z-50 border-b border-warmborder dark:border-white/10 bg-warmbg/80 dark:bg-darkbg/80 backdrop-blur-md h-[69px] flex items-center px-6">
         <div className="w-full flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Hamburger Toggle */}
@@ -160,7 +156,7 @@ export default function DashboardLayoutClient({ children, profile, user }: Dashb
                   key={link.href}
                   href={link.href}
                   onClick={handleLinkClick}
-                  className={`flex items-center rounded-xl text-sm font-bold transition-all duration-200 ${
+                  className={`flex items-center rounded-xl text-sm font-bold transition-colors duration-75 ${
                     isSidebarOpen ? 'gap-3 px-4 py-3' : 'justify-center p-3'
                   } ${
                     isActive
@@ -190,7 +186,7 @@ export default function DashboardLayoutClient({ children, profile, user }: Dashb
 
       {/* Floating Real-Time Clock */}
       {currentTime && (
-        <div className="fixed bottom-4 right-4 z-40 bg-[#FDFCFB]/95 dark:bg-darkbg/95 backdrop-blur-md border border-warmborder dark:border-white/10 rounded-xl px-4.5 py-2.5 shadow-md text-sm font-semibold font-mono text-warmtext dark:text-darktext flex items-center gap-2 transition-colors duration-300">
+        <div className="fixed bottom-4 right-4 z-40 bg-[#FDFCFB]/95 dark:bg-darkbg/95 backdrop-blur-md border border-warmborder dark:border-white/10 rounded-xl px-4.5 py-2.5 shadow-md text-sm font-semibold font-mono text-warmtext dark:text-darktext flex items-center gap-2">
           <Clock className="h-4 w-4 text-indigo-600 dark:text-indigo-400 animate-pulse" />
           <span>{currentTime}</span>
         </div>

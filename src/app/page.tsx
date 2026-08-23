@@ -4,7 +4,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-warmbg dark:bg-darkbg text-warmtext dark:text-darktext flex flex-col font-sans relative overflow-x-hidden transition-colors duration-300">
+    <div className="min-h-screen bg-warmbg dark:bg-darkbg text-warmtext dark:text-darktext flex flex-col font-sans relative overflow-x-hidden">
       {/* Background Grid & Glows */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(99,102,241,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(99,102,241,0.03)_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,rgba(240,235,227,0.015)_1px,transparent_1px),linear-gradient(to_bottom,rgba(240,235,227,0.015)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none -z-10" />
       <div className="absolute top-[-150px] left-1/2 -translate-x-1/2 w-[400px] h-[400px] sm:w-[600px] sm:h-[600px] rounded-full bg-indigo-500/5 dark:bg-indigo-500/5 blur-[120px] pointer-events-none -z-10 animate-pulse duration-5000" />

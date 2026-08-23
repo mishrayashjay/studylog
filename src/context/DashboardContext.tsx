@@ -46,15 +46,9 @@ export function useDashboard() {
 interface DashboardProviderProps {
   children: ReactNode
   user: User | null
-  profile: {
-    id: string
-    username: string
-    full_name: string | null
-  }
-  initialSessions: StudySession[]
 }
 
-export function DashboardProvider({ children, user, profile, initialSessions }: DashboardProviderProps) {
+export function DashboardProvider({ children, user }: DashboardProviderProps) {
   const supabase = createClient()
 
   const isSupabaseConfigured =
@@ -63,31 +57,69 @@ export function DashboardProvider({ children, user, profile, initialSessions }: 
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'your-supabase-anon-key'
 
-  const [sessions, setSessions] = useState<StudySession[]>(initialSessions)
+  const [profile, setProfile] = useState<{ id: string; username: string; full_name: string | null }>({
+    id: user?.id || '',
+    username: user?.email?.split('@')[0] || 'user',
+    full_name: '',
+  })
+  const [sessions, setSessions] = useState<StudySession[]>([])
   const [isOfflineMode, setIsOfflineMode] = useState(!isSupabaseConfigured)
   const [prefilledDuration, setPrefilledDuration] = useState<number | null>(null)
 
+  // Fetch initial profile & study sessions from database exactly once on client mount
   useEffect(() => {
-    if (isOfflineMode) {
-      const stored = localStorage.getItem(`studylog_sessions_${user?.id || 'local'}`)
+    const fetchUserData = async () => {
+      if (!user || isOfflineMode) return
+
+      try {
+        // Fetch user profile info
+        const { data: prof, error: profError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+
+        if (!profError && prof) {
+          setProfile(prof)
+        }
+
+        // Fetch study history database
+        const { data: sess, error: sessError } = await supabase
+          .from('study_sessions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('timestamp', { ascending: false })
+
+        if (!sessError && sess) {
+          setSessions(sess)
+        }
+      } catch (err) {
+        console.error('Failed to load user credentials from Supabase. Defaulting to local storage cache.', err)
+        setIsOfflineMode(true)
+      }
+    }
+
+    fetchUserData()
+  }, [user, isOfflineMode, supabase])
+
+  // Sync state if offline mode cache takes over
+  useEffect(() => {
+    if (isOfflineMode && user) {
+      const stored = localStorage.getItem(`studylog_sessions_${user.id}`)
       if (stored) {
         try {
           setSessions(JSON.parse(stored))
         } catch (e) {
-          console.error('Failed to parse local sessions', e)
+          console.error('Failed to parse local sessions database', e)
         }
-      } else if (initialSessions.length > 0) {
-        setSessions(initialSessions)
       }
-    } else {
-      setSessions(initialSessions)
     }
-  }, [isOfflineMode, initialSessions, user?.id])
+  }, [isOfflineMode, user])
 
   const saveSessions = (newSessions: StudySession[]) => {
     setSessions(newSessions)
-    if (isOfflineMode) {
-      localStorage.setItem(`studylog_sessions_${user?.id || 'local'}`, JSON.stringify(newSessions))
+    if (isOfflineMode && user) {
+      localStorage.setItem(`studylog_sessions_${user.id}`, JSON.stringify(newSessions))
     }
   }
 

@@ -268,7 +268,7 @@ export default function LoginPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-warmbg dark:bg-darkbg text-warmtext dark:text-darktext flex flex-col md:flex-row transition-colors duration-300 font-sans">
+    <div className="min-h-screen bg-warmbg dark:bg-darkbg text-warmtext dark:text-darktext flex flex-col md:flex-row font-sans">
       {/* Left Column: Form Container */}
       <div className="w-full md:w-[45%] lg:w-[40%] px-8 py-12 flex flex-col justify-center items-center bg-[#FDFCFB] dark:bg-darkbg border-r border-warmborder dark:border-white/5 transition-colors duration-300 min-h-screen">
         <Suspense fallback={
