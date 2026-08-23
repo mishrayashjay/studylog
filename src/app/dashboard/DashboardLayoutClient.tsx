@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/client'
-import { BookOpen, LogOut, Menu, LayoutDashboard, Clock, PlusCircle, History, Settings } from 'lucide-react'
+import { BookOpen, LogOut, Menu, LayoutDashboard, Clock, History, Settings } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
 import ThemeToggle from '@/components/ThemeToggle'
 
@@ -25,6 +25,7 @@ export default function DashboardLayoutClient({ children, profile, user }: Dashb
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
+  const [currentTime, setCurrentTime] = useState<string>('')
 
   // Listen to window size to adapt sidebar responsive state
   useEffect(() => {
@@ -38,16 +39,39 @@ export default function DashboardLayoutClient({ children, profile, user }: Dashb
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  // Start real-time clock tick
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date()
+      setCurrentTime(
+        now.toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }) +
+          ' • ' +
+          now.toLocaleTimeString(undefined, {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          })
+      )
+    }
+    updateTime()
+    const timer = setInterval(updateTime, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.push('/login')
     router.refresh()
   }
 
+  // Standalone "Log Session" link has been removed.
   const navLinks = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Focus Timer', href: '/dashboard/timer', icon: Clock },
-    { name: 'Log Session', href: '/dashboard/log', icon: PlusCircle },
     { name: 'History', href: '/dashboard/history', icon: History },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ]
@@ -65,9 +89,9 @@ export default function DashboardLayoutClient({ children, profile, user }: Dashb
       <div className="absolute top-0 right-1/4 w-[300px] h-[300px] rounded-full bg-indigo-500/5 dark:bg-indigo-500/5 blur-[100px] pointer-events-none -z-10 animate-pulse duration-8000" />
       <div className="absolute bottom-10 left-1/4 w-[300px] h-[300px] rounded-full bg-purple-500/5 dark:bg-purple-500/5 blur-[100px] pointer-events-none -z-10 animate-pulse duration-10000" />
 
-      {/* Top Navigation Bar */}
-      <nav className="sticky top-0 z-50 border-b border-warmborder dark:border-white/10 bg-warmbg/80 dark:bg-darkbg/80 backdrop-blur-md transition-colors duration-300 h-[69px] flex items-center">
-        <div className="w-full max-w-7xl mx-auto px-6 flex items-center justify-between">
+      {/* Top Navigation Bar - starts flush at the very left edge */}
+      <nav className="sticky top-0 z-50 border-b border-warmborder dark:border-white/10 bg-warmbg/80 dark:bg-darkbg/80 backdrop-blur-md transition-colors duration-300 h-[69px] flex items-center px-6">
+        <div className="w-full flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Hamburger Toggle */}
             <button
@@ -118,12 +142,12 @@ export default function DashboardLayoutClient({ children, profile, user }: Dashb
           />
         )}
 
-        {/* Sidebar Navigation */}
+        {/* Sidebar Navigation - starts flush at left edge, collapsible */}
         <aside
-          className={`fixed md:sticky top-[69px] z-40 h-[calc(100vh-69px)] border-r border-warmborder dark:border-white/10 bg-[#FDFCFB] dark:bg-darkbg transition-all duration-300 ease-in-out flex flex-col justify-between p-4 shrink-0 overflow-y-auto ${
-            isSidebarOpen
-              ? 'w-64 translate-x-0'
-              : 'w-0 -translate-x-full md:w-0 md:translate-x-0 pointer-events-none p-0 border-r-0'
+          className={`z-40 border-r border-warmborder dark:border-white/10 bg-[#FDFCFB] dark:bg-darkbg transition-all duration-300 ease-in-out flex flex-col justify-between p-4 shrink-0 ${
+            isMobile
+              ? `fixed left-0 top-[69px] h-[calc(100vh-69px)] ${isSidebarOpen ? 'w-64 translate-x-0' : 'w-0 -translate-x-full pointer-events-none p-0 border-r-0'}`
+              : `sticky top-[69px] h-[calc(100vh-69px)] overflow-y-auto ${isSidebarOpen ? 'w-64' : 'w-16 px-2'}`
           }`}
         >
           <div className="space-y-1.5 w-full">
@@ -136,30 +160,41 @@ export default function DashboardLayoutClient({ children, profile, user }: Dashb
                   key={link.href}
                   href={link.href}
                   onClick={handleLinkClick}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
+                  className={`flex items-center rounded-xl text-sm font-bold transition-all duration-200 ${
+                    isSidebarOpen ? 'gap-3 px-4 py-3' : 'justify-center p-3'
+                  } ${
                     isActive
                       ? 'bg-indigo-600 dark:bg-indigo-500 text-white shadow-sm shadow-indigo-600/10'
                       : 'text-warmtext/60 dark:text-darktext/50 hover:bg-warmbg dark:hover:bg-white/10 hover:text-warmtext dark:hover:text-darktext'
                   }`}
+                  title={!isSidebarOpen ? link.name : undefined}
                 >
-                  <link.icon className="h-4.5 w-4.5" />
-                  <span>{link.name}</span>
+                  <link.icon className="h-4.5 w-4.5 shrink-0" />
+                  {isSidebarOpen && <span className="truncate">{link.name}</span>}
                 </Link>
               )
             })}
           </div>
 
           {/* Footer inside sidebar */}
-          <div className="pt-4 border-t border-slate-100 dark:border-white/10 text-center text-[10px] text-warmtext/40 dark:text-darktext/40">
-            &copy; {new Date().getFullYear()} studylog
+          <div className="pt-4 border-t border-warmborder/60 dark:border-white/10 text-center text-[10px] text-warmtext/40 dark:text-darktext/40">
+            {isSidebarOpen ? `© ${new Date().getFullYear()} studylog` : '©'}
           </div>
         </aside>
 
-        {/* Main Content Area */}
-        <main className="flex-1 min-w-0 p-6 md:p-8 max-w-5xl mx-auto">
+        {/* Main Content Area - occupies remaining screen width */}
+        <main className="flex-1 min-w-0 p-6 md:p-8 w-full relative">
           {children}
         </main>
       </div>
+
+      {/* Floating Real-Time Clock */}
+      {currentTime && (
+        <div className="fixed bottom-4 right-4 z-40 bg-[#FDFCFB]/85 dark:bg-darkbg/80 backdrop-blur-md border border-warmborder dark:border-white/10 rounded-xl px-3.5 py-2 shadow-md text-xs font-semibold font-mono text-warmtext/80 dark:text-darktext/80 flex items-center gap-2 transition-colors duration-300">
+          <Clock className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400 animate-pulse" />
+          <span>{currentTime}</span>
+        </div>
+      )}
     </div>
   )
 }
