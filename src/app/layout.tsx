@@ -32,9 +32,20 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  var theme = localStorage.getItem('theme');
-                  var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  if (theme === 'dark' || (!theme && systemDark)) {
+                  var theme = localStorage.getItem('theme') || 'theme-light';
+                  var darkThemes = ['theme-dark', 'theme-oled', 'theme-midnight'];
+                  var themes = ['theme-light', 'theme-sepia', 'theme-dark', 'theme-oled', 'theme-midnight'];
+                  
+                  if (theme === 'dark') theme = 'theme-dark';
+                  if (theme === 'light') theme = 'theme-light';
+                  
+                  themes.forEach(function(t) {
+                    document.documentElement.classList.remove(t);
+                  });
+                  
+                  document.documentElement.classList.add(theme);
+                  
+                  if (darkThemes.indexOf(theme) > -1) {
                     document.documentElement.classList.add('dark');
                   } else {
                     document.documentElement.classList.remove('dark');
