@@ -16,7 +16,11 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
-        darkbg: "#0a0a0f",
+        warmbg: "#FAF7F2",
+        warmtext: "#2A2622",
+        warmborder: "#E6DFD5",
+        darkbg: "#1C1A18",
+        darktext: "#F0EBE3",
       },
     },
   },

@@ -87,16 +87,16 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
   }
 
   return (
-    <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-colors duration-200">
+    <div className="bg-[#FDFCFB] dark:bg-white/5 p-6 rounded-2xl border border-warmborder dark:border-white/10 shadow-sm transition-colors duration-300">
       <div className="flex items-center gap-1.5 mb-4">
         <BookOpen className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400" />
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Log Study Session</h2>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-warmtext/50 dark:text-darktext/50">Log Study Session</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Subject */}
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-warmtext/50 dark:text-darktext/50 mb-1.5">
             Subject
           </label>
           <input
@@ -105,7 +105,7 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
             placeholder="e.g. Linear Algebra, React Context..."
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="w-full px-3.5 py-2 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-white/5 text-slate-900 dark:text-white text-sm transition-colors duration-200"
+            className="w-full px-3.5 py-2 border border-warmborder dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-[#FDFCFB] dark:bg-white/5 text-warmtext dark:text-darktext text-sm transition-colors duration-300"
           />
           {/* Suggestions */}
           <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -114,10 +114,10 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
                 key={sub}
                 type="button"
                 onClick={() => handleSelectCommonSubject(sub)}
-                className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border transition-all duration-200 ${
+                className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border transition-all duration-300 ${
                   subject.toLowerCase() === sub.toLowerCase()
                     ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400'
-                    : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-white/20 hover:text-slate-800 dark:hover:text-slate-200'
+                    : 'bg-warmbg dark:bg-white/5 border-warmborder dark:border-white/10 text-warmtext/60 dark:text-darktext/50 hover:border-warmborder/80 dark:hover:border-white/20 hover:text-warmtext dark:hover:text-darktext'
                 }`}
               >
                 {sub}
@@ -129,7 +129,7 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
         {/* Duration */}
         <div>
           <div className="flex justify-between items-baseline mb-1.5">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <label className="block text-xs font-bold uppercase tracking-wider text-warmtext/50 dark:text-darktext/50">
               Duration (minutes)
             </label>
             {prefilledDuration !== null && (
@@ -138,7 +138,7 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
                 <button
                   type="button"
                   onClick={onClearPrefill}
-                  className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 p-0.5"
+                  className="text-warmtext/40 dark:text-darktext/40 hover:text-warmtext/60 dark:hover:text-darktext/60 p-0.5"
                   title="Clear timer fill"
                 >
                   <X className="h-3 w-3" />
@@ -155,15 +155,15 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
               placeholder="e.g. 45, 90"
               value={durationMins}
               onChange={(e) => setDurationMins(e.target.value)}
-              className="w-full pl-9 pr-3.5 py-2 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-white/5 text-slate-900 dark:text-white text-sm transition-colors duration-200"
+              className="w-full pl-9 pr-3.5 py-2 border border-warmborder dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-[#FDFCFB] dark:bg-white/5 text-warmtext dark:text-darktext text-sm transition-colors duration-300"
             />
-            <Clock className="absolute left-3 top-2.5 h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
+            <Clock className="absolute left-3 top-2.5 h-4.5 w-4.5 text-warmtext/40 dark:text-darktext/40" />
           </div>
         </div>
 
-        {/* Timestamp */}
+        {/* Date */}
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-warmtext/50 dark:text-darktext/50 mb-1.5">
             Date & Time
           </label>
           <div className="relative">
@@ -172,15 +172,15 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
               required
               value={timestamp}
               onChange={(e) => setTimestamp(e.target.value)}
-              className="w-full pl-9 pr-3.5 py-2 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-white/5 text-slate-900 dark:text-white text-sm transition-colors duration-200 [color-scheme:light] dark:[color-scheme:dark]"
+              className="w-full pl-9 pr-3.5 py-2 border border-warmborder dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-[#FDFCFB] dark:bg-white/5 text-warmtext dark:text-darktext text-sm transition-colors duration-300 [color-scheme:light] dark:[color-scheme:dark]"
             />
-            <Calendar className="absolute left-3 top-2.5 h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
+            <Calendar className="absolute left-3 top-2.5 h-4.5 w-4.5 text-warmtext/40 dark:text-darktext/40" />
           </div>
         </div>
 
         {/* Notes */}
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-warmtext/50 dark:text-darktext/50 mb-1.5">
             Notes (optional)
           </label>
           <div className="relative">
@@ -189,16 +189,16 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              className="w-full pl-9 pr-3.5 py-2 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-white/5 text-slate-900 dark:text-white text-sm resize-none transition-colors duration-200"
+              className="w-full pl-9 pr-3.5 py-2 border border-warmborder dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-[#FDFCFB] dark:bg-white/5 text-warmtext dark:text-darktext text-sm resize-none transition-colors duration-300"
             />
-            <FileText className="absolute left-3 top-2.5 h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
+            <FileText className="absolute left-3 top-2.5 h-4.5 w-4.5 text-warmtext/40 dark:text-darktext/40" />
           </div>
         </div>
 
         <button
           type="submit"
           disabled={submitting}
-          className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition-all duration-200 shadow-sm shadow-indigo-600/10 hover:shadow-indigo-600/20 disabled:opacity-50"
+          className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition-all duration-300 shadow-sm shadow-indigo-600/10 hover:shadow-indigo-600/20 disabled:opacity-50"
         >
           <CheckCircle className="h-4 w-4" />
           {submitting ? 'Logging...' : 'Log Session'}

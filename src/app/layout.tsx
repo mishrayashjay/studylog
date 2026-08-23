@@ -45,7 +45,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased font-sans bg-slate-50 dark:bg-darkbg text-slate-900 dark:text-slate-100 transition-colors duration-200">
+      <body className="antialiased font-sans bg-warmbg dark:bg-darkbg text-warmtext dark:text-darktext transition-colors duration-300">
         {children}
       </body>
     </html>

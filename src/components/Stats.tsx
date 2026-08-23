@@ -63,7 +63,7 @@ export default function Stats({ sessions }: StatsProps) {
         const d = new Date(s.timestamp)
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
           d.getDate()
-        ).padStart(2, '0')}`
+         ).padStart(2, '0')}`
       })
     )
 
@@ -133,32 +133,32 @@ export default function Stats({ sessions }: StatsProps) {
       {/* Top Cards (Total Hours, Streak) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Weekly Stats */}
-        <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm flex items-center gap-4 transition-colors duration-200">
+        <div className="bg-[#FDFCFB] dark:bg-white/5 p-6 rounded-2xl border border-warmborder dark:border-white/10 shadow-sm flex items-center gap-4 transition-colors duration-300">
           <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl">
             <Clock className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">This Week</p>
-            <p className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 mt-1">
+            <p className="text-xs font-bold text-warmtext/50 dark:text-darktext/50 uppercase tracking-wider">This Week</p>
+            <p className="text-2xl font-extrabold text-warmtext dark:text-darktext mt-1">
               {formatDuration(weeklySeconds)}
             </p>
-            <p className="text-slate-400 dark:text-slate-500 text-xs mt-1">
+            <p className="text-warmtext/50 dark:text-darktext/50 text-xs mt-1">
               Mon – Sun focus time
             </p>
           </div>
         </div>
 
         {/* Streak Stats */}
-        <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm flex items-center gap-4 transition-colors duration-200">
+        <div className="bg-[#FDFCFB] dark:bg-white/5 p-6 rounded-2xl border border-warmborder dark:border-white/10 shadow-sm flex items-center gap-4 transition-colors duration-300">
           <div className="p-3 bg-amber-50 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 rounded-xl">
             <Award className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Current Streak</p>
-            <p className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 mt-1">
+            <p className="text-xs font-bold text-warmtext/50 dark:text-darktext/50 uppercase tracking-wider">Current Streak</p>
+            <p className="text-2xl font-extrabold text-warmtext dark:text-darktext mt-1">
               {streak} {streak === 1 ? 'day' : 'days'}
             </p>
-            <p className="text-slate-400 dark:text-slate-500 text-xs mt-1">
+            <p className="text-warmtext/50 dark:text-darktext/50 text-xs mt-1">
               {streak > 0 ? 'Keep the fire burning!' : 'Log a session to start'}
             </p>
           </div>
@@ -166,19 +166,19 @@ export default function Stats({ sessions }: StatsProps) {
       </div>
 
       {/* Subject Breakdown Card */}
-      <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-colors duration-200">
+      <div className="bg-[#FDFCFB] dark:bg-white/5 p-6 rounded-2xl border border-warmborder dark:border-white/10 shadow-sm transition-colors duration-300">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-1.5">
             <PieChart className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400" />
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Time by Subject</h2>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-warmtext/50 dark:text-darktext/50">Time by Subject</h2>
           </div>
-          <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
+          <span className="text-xs font-semibold text-warmtext/50 dark:text-darktext/50">
             Total: {formatDuration(totalStudySeconds)}
           </span>
         </div>
 
         {subjectBreakdown.length === 0 ? (
-          <div className="py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
+          <div className="py-12 text-center text-warmtext/50 dark:text-darktext/50 text-sm">
             No study sessions logged yet. Your subject analytics will show up here.
           </div>
         ) : (
@@ -186,18 +186,18 @@ export default function Stats({ sessions }: StatsProps) {
             {subjectBreakdown.slice(0, 5).map((item) => (
               <div key={item.subject} className="space-y-1">
                 <div className="flex justify-between items-baseline text-sm">
-                  <span className="font-bold text-slate-700 dark:text-slate-300 truncate max-w-[70%]">
+                  <span className="font-bold text-warmtext/80 dark:text-darktext/80 truncate max-w-[70%]">
                     {item.subject}
                   </span>
                   <div className="flex gap-2 items-center text-xs font-medium">
-                    <span className="text-slate-500 dark:text-slate-400">{formatDuration(item.seconds)}</span>
+                    <span className="text-warmtext/50 dark:text-darktext/55">{formatDuration(item.seconds)}</span>
                     <span className={`${item.textClass} font-semibold`}>
                       {item.percentage.toFixed(0)}%
                     </span>
                   </div>
                 </div>
                 {/* Progress Bar container */}
-                <div className="h-2 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
+                <div className="h-2 bg-warmbg dark:bg-white/10 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${item.colorClass}`}
                     style={{ width: `${item.percentage}%` }}
@@ -206,7 +206,7 @@ export default function Stats({ sessions }: StatsProps) {
               </div>
             ))}
             {subjectBreakdown.length > 5 && (
-              <p className="text-center text-xs text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-100 dark:border-white/10">
+              <p className="text-center text-xs text-warmtext/50 dark:text-darktext/55 pt-2 border-t border-warmborder/60 dark:border-white/10">
                 + {subjectBreakdown.length - 5} other subjects logged
               </p>
             )}

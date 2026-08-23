@@ -60,12 +60,12 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
   })
 
   return (
-    <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-colors duration-200">
+    <div className="bg-[#FDFCFB] dark:bg-white/5 p-6 rounded-2xl border border-warmborder dark:border-white/10 shadow-sm transition-colors duration-300">
       {/* Header and Controls */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-100 dark:border-white/10 pb-4 mb-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-warmborder/60 dark:border-white/10 pb-4 mb-6">
         <div>
-          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Study History</h2>
-          <p className="text-slate-400 dark:text-slate-500 text-xs mt-0.5">
+          <h2 className="text-lg font-bold text-warmtext dark:text-darktext">Study History</h2>
+          <p className="text-warmtext/50 dark:text-darktext/50 text-xs mt-0.5">
             View, search, and filter your logged study sessions
           </p>
         </div>
@@ -79,9 +79,9 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
               placeholder="Search by subject..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full sm:w-60 pl-9 pr-3.5 py-1.5 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-white/5 text-slate-900 dark:text-white text-xs transition-colors duration-200"
+              className="w-full sm:w-60 pl-9 pr-3.5 py-1.5 border border-warmborder dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-[#FDFCFB] dark:bg-white/5 text-warmtext dark:text-darktext text-xs transition-colors duration-300"
             />
-            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
+            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-warmtext/40 dark:text-darktext/40" />
           </div>
 
           {/* Date Filter Dropdown */}
@@ -89,15 +89,15 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
             <select
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value as 'all' | 'today' | 'week' | 'month')}
-              className="w-full sm:w-40 pl-9 pr-8 py-1.5 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 text-xs appearance-none cursor-pointer font-medium transition-colors duration-200"
+              className="w-full sm:w-40 pl-9 pr-8 py-1.5 border border-warmborder dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-[#FDFCFB] dark:bg-white/5 text-warmtext/70 dark:text-darktext/70 text-xs appearance-none cursor-pointer font-medium transition-colors duration-300"
             >
               <option value="all">All History</option>
               <option value="today">Today</option>
               <option value="week">Last 7 Days</option>
               <option value="month">This Month</option>
             </select>
-            <Calendar className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400 dark:text-slate-500 pointer-events-none" />
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 dark:text-slate-500 text-[9px]">
+            <Calendar className="absolute left-3 top-2.5 h-3.5 w-3.5 text-warmtext/40 dark:text-darktext/40 pointer-events-none" />
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-warmtext/40 dark:text-darktext/40 text-[9px]">
               ▼
             </div>
           </div>
@@ -106,21 +106,21 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
 
       {/* History List */}
       {filteredSessions.length === 0 ? (
-        <div className="py-12 text-center text-slate-400 dark:text-slate-500 text-sm flex flex-col items-center justify-center gap-2">
-          <AlertCircle className="h-8 w-8 text-slate-300 dark:text-slate-700" />
+        <div className="py-12 text-center text-warmtext/50 dark:text-darktext/50 text-sm flex flex-col items-center justify-center gap-2">
+          <AlertCircle className="h-8 w-8 text-warmborder dark:text-darktext/20" />
           <p>No study sessions found matching your criteria.</p>
         </div>
       ) : (
-        <div className="divide-y divide-slate-100 dark:divide-white/10 max-h-[500px] overflow-y-auto pr-1">
+        <div className="divide-y divide-warmborder/60 dark:divide-white/10 max-h-[500px] overflow-y-auto pr-1">
           {filteredSessions.map((session) => (
             <div key={session.id} className="py-4 first:pt-0 last:pb-0 flex items-start justify-between gap-4 group">
               <div className="space-y-1.5 min-w-0 flex-1">
                 {/* Subject & Time */}
                 <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                  <span className="font-bold text-slate-800 dark:text-slate-200 truncate text-sm sm:text-base">
+                  <span className="font-bold text-warmtext/95 dark:text-darktext/95 truncate text-sm sm:text-base">
                     {session.subject}
                   </span>
-                  <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">
+                  <span className="text-[11px] font-semibold text-warmtext/55 dark:text-darktext/55">
                     {formatDateTime(session.timestamp)}
                   </span>
                 </div>
@@ -133,7 +133,7 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
 
                 {/* Notes */}
                 {session.notes && (
-                  <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed italic bg-slate-50 dark:bg-white/5 p-2.5 rounded-xl border border-slate-100 dark:border-white/10 max-w-2xl mt-1">
+                  <p className="text-warmtext/70 dark:text-darktext/75 text-xs leading-relaxed italic bg-warmbg dark:bg-white/5 p-2.5 rounded-xl border border-warmborder dark:border-white/10 max-w-2xl mt-1">
                     {session.notes}
                   </p>
                 )}
@@ -146,7 +146,7 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
                     onDeleteSession(session.id)
                   }
                 }}
-                className="p-2 border border-transparent hover:border-red-100 dark:hover:border-red-500/20 hover:bg-red-50 dark:hover:bg-red-500/10 text-slate-300 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-all shrink-0 align-self-start opacity-0 group-hover:opacity-100 focus:opacity-100"
+                className="p-2 border border-transparent hover:border-red-100 dark:hover:border-red-500/20 hover:bg-red-50 dark:hover:bg-red-500/10 text-warmtext/30 dark:text-darktext/30 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-all shrink-0 align-self-start opacity-0 group-hover:opacity-100 focus:opacity-100"
                 title="Delete Log"
               >
                 <Trash2 className="h-4.5 w-4.5" />

@@ -9,8 +9,8 @@ export default function HistoryPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-800 dark:text-slate-100 font-display">Study History</h1>
-        <p className="text-slate-400 dark:text-slate-500 text-xs mt-0.5">
+        <h1 className="text-2xl font-bold tracking-tight text-warmtext dark:text-darktext font-display">Study History</h1>
+        <p className="text-warmtext/50 dark:text-darktext/50 text-xs mt-0.5">
           Review, search, and manage your past logged study sessions.
         </p>
       </div>

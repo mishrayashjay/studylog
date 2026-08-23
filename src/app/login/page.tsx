@@ -105,7 +105,7 @@ function LoginForm() {
     <div className={`w-full max-w-sm transition-all duration-700 ease-out transform ${formMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
       {/* Brand Header & Back CTA */}
       <div className="mb-8">
-        <Link href="/" className="inline-flex items-center gap-1 text-xs font-semibold text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors mb-4">
+        <Link href="/" className="inline-flex items-center gap-1 text-xs font-semibold text-warmtext/50 dark:text-darktext/50 hover:text-warmtext dark:hover:text-darktext transition-colors mb-4">
           <ChevronLeft className="h-3 w-3" />
           <span>Back to home</span>
         </Link>
@@ -113,17 +113,17 @@ function LoginForm() {
           <div className="p-2 bg-indigo-600 dark:bg-indigo-500 rounded-xl text-white shadow-sm shadow-indigo-600/10">
             <BookOpen className="h-5 w-5" />
           </div>
-          <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-slate-100 font-display">studylog</span>
+          <span className="font-bold text-xl tracking-tight text-warmtext dark:text-darktext font-display">studylog</span>
         </div>
-        <p className="mt-3 text-slate-400 dark:text-slate-500 text-xs">
+        <p className="mt-3 text-warmtext/65 dark:text-darktext/65 text-xs">
           {activeTab === 'login' ? 'Sign in to sync your study metrics.' : 'Create an account to begin tracking.'}
         </p>
       </div>
 
       {/* Sliding Tab Switcher */}
-      <div className="relative flex p-1 bg-slate-100 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 rounded-xl mb-6">
+      <div className="relative flex p-1 bg-warmbg dark:bg-white/5 border border-warmborder dark:border-white/5 rounded-xl mb-6">
         <div
-          className="absolute top-1 bottom-1 left-1 rounded-lg bg-white dark:bg-white/10 shadow-sm transition-all duration-300 ease-out"
+          className="absolute top-1 bottom-1 left-1 rounded-lg bg-[#FDFCFB] dark:bg-white/10 shadow-sm transition-all duration-300 ease-out"
           style={{
             width: 'calc(50% - 4px)',
             transform: activeTab === 'login' ? 'translateX(0)' : 'translateX(100%)',
@@ -135,7 +135,7 @@ function LoginForm() {
           className={`relative z-10 flex-1 py-1.5 text-xs font-bold uppercase tracking-wider text-center transition-colors duration-300 ${
             activeTab === 'login'
               ? 'text-indigo-600 dark:text-indigo-400 font-extrabold'
-              : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+              : 'text-warmtext/50 dark:text-darktext/50 hover:text-warmtext dark:hover:text-darktext'
           }`}
         >
           Sign In
@@ -146,7 +146,7 @@ function LoginForm() {
           className={`relative z-10 flex-1 py-1.5 text-xs font-bold uppercase tracking-wider text-center transition-colors duration-300 ${
             activeTab === 'signup'
               ? 'text-indigo-600 dark:text-indigo-400 font-extrabold'
-              : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+              : 'text-warmtext/50 dark:text-darktext/50 hover:text-warmtext dark:hover:text-darktext'
           }`}
         >
           Create Account
@@ -172,7 +172,7 @@ function LoginForm() {
         {activeTab === 'signup' && (
           <>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-warmtext/50 dark:text-darktext/50 mb-1.5">
                 Username
               </label>
               <div className="relative">
@@ -182,13 +182,13 @@ function LoginForm() {
                   placeholder="johndoe"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white dark:bg-white/5 text-slate-900 dark:text-white text-sm transition-all duration-200"
+                  className="w-full pl-10 pr-4 py-2.5 border border-warmborder dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-[#FDFCFB] dark:bg-white/5 text-warmtext dark:text-darktext text-sm transition-all duration-200"
                 />
-                <User className="absolute left-3.5 top-3 h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
+                <User className="absolute left-3.5 top-3 h-4.5 w-4.5 text-warmtext/40 dark:text-darktext/40" />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-warmtext/50 dark:text-darktext/50 mb-1.5">
                 Full Name
               </label>
               <div className="relative">
@@ -197,16 +197,16 @@ function LoginForm() {
                   placeholder="John Doe"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white dark:bg-white/5 text-slate-900 dark:text-white text-sm transition-all duration-200"
+                  className="w-full pl-10 pr-4 py-2.5 border border-warmborder dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-[#FDFCFB] dark:bg-white/5 text-warmtext dark:text-darktext text-sm transition-all duration-200"
                 />
-                <User className="absolute left-3.5 top-3 h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
+                <User className="absolute left-3.5 top-3 h-4.5 w-4.5 text-warmtext/40 dark:text-darktext/40" />
               </div>
             </div>
           </>
         )}
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-warmtext/50 dark:text-darktext/50 mb-1.5">
             Email Address
           </label>
           <div className="relative">
@@ -216,14 +216,14 @@ function LoginForm() {
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white dark:bg-white/5 text-slate-900 dark:text-white text-sm transition-all duration-200"
+              className="w-full pl-10 pr-4 py-2.5 border border-warmborder dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-[#FDFCFB] dark:bg-white/5 text-warmtext dark:text-darktext text-sm transition-all duration-200"
             />
-            <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 dark:text-slate-500" />
+            <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-warmtext/40 dark:text-darktext/40" />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-warmtext/50 dark:text-darktext/50 mb-1.5">
             Password
           </label>
           <div className="relative">
@@ -233,9 +233,9 @@ function LoginForm() {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-slate-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white dark:bg-white/5 text-slate-900 dark:text-white text-sm transition-all duration-200"
+              className="w-full pl-10 pr-4 py-2.5 border border-warmborder dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-[#FDFCFB] dark:bg-white/5 text-warmtext dark:text-darktext text-sm transition-all duration-200"
             />
-            <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 dark:text-slate-500" />
+            <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-warmtext/40 dark:text-darktext/40" />
           </div>
         </div>
 
@@ -268,9 +268,9 @@ export default function LoginPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-darkbg text-slate-900 dark:text-slate-100 flex flex-col md:flex-row transition-colors duration-200 font-sans">
+    <div className="min-h-screen bg-warmbg dark:bg-darkbg text-warmtext dark:text-darktext flex flex-col md:flex-row transition-colors duration-300 font-sans">
       {/* Left Column: Form Container */}
-      <div className="w-full md:w-[45%] lg:w-[40%] px-8 py-12 flex flex-col justify-center items-center bg-white dark:bg-darkbg border-r border-slate-200 dark:border-white/5 transition-colors duration-200 min-h-screen">
+      <div className="w-full md:w-[45%] lg:w-[40%] px-8 py-12 flex flex-col justify-center items-center bg-[#FDFCFB] dark:bg-darkbg border-r border-warmborder dark:border-white/5 transition-colors duration-300 min-h-screen">
         <Suspense fallback={
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Loader2 className="h-8 w-8 text-indigo-600 dark:text-indigo-500 animate-spin" />
@@ -284,9 +284,9 @@ export default function LoginPage() {
       {/* Right Column: Visual Mesh Gradient Stats Panel (Desktop Only) */}
       <div className="hidden md:flex md:w-[55%] lg:w-[60%] bg-gradient-to-br from-indigo-950 via-slate-950 to-purple-950 p-16 flex-col justify-between text-white relative overflow-hidden">
         {/* Background Grid & Blur Circle */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
-        <div className="absolute top-[20%] -right-1/4 w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none animate-pulse duration-10000" />
-        <div className="absolute bottom-[10%] -left-1/4 w-[400px] h-[400px] rounded-full bg-purple-500/10 blur-[100px] pointer-events-none animate-pulse duration-7000" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
+        <div className="absolute top-[20%] -right-1/4 w-[500px] h-[500px] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none animate-pulse duration-10000" />
+        <div className="absolute bottom-[10%] -left-1/4 w-[400px] h-[400px] rounded-full bg-purple-500/5 blur-[100px] pointer-events-none animate-pulse duration-7000" />
 
         {/* Top brand header */}
         <div className={`flex items-center gap-2.5 transition-all duration-1000 transform ${rightMounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
@@ -308,17 +308,17 @@ export default function LoginPage() {
             Focus is a muscle. <br />
             Track the workouts.
           </h2>
-          <p className="mt-4 text-slate-400 text-sm leading-relaxed">
-            Building consistence isn&apos;t about studying 10 hours a day, it&apos;s about studying every day. Keep your daily streak active and visualize your learning time breakdown.
+          <p className="mt-4 text-darktext/70 text-sm leading-relaxed">
+            Building consistency isn&apos;t about studying 10 hours a day, it&apos;s about studying every day. Keep your daily streak active and visualize your learning time breakdown.
           </p>
         </div>
 
         {/* Bottom learning quote */}
         <div className={`transition-all duration-1000 delay-400 transform ${rightMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
-          <p className="text-xs text-slate-400 italic">
+          <p className="text-xs text-darktext/60 italic">
             &ldquo;Learning is the only thing the mind never exhausts, never fears, and never regrets.&rdquo;
           </p>
-          <span className="block mt-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest">— Leonardo da Vinci</span>
+          <span className="block mt-1.5 text-[10px] font-bold text-darktext/40 uppercase tracking-widest">— Leonardo da Vinci</span>
         </div>
       </div>
     </div>
