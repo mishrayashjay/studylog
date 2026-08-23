@@ -190,8 +190,8 @@ export default function DashboardLayoutClient({ children, profile, user }: Dashb
 
       {/* Floating Real-Time Clock */}
       {currentTime && (
-        <div className="fixed bottom-4 right-4 z-40 bg-[#FDFCFB]/85 dark:bg-darkbg/80 backdrop-blur-md border border-warmborder dark:border-white/10 rounded-xl px-3.5 py-2 shadow-md text-xs font-semibold font-mono text-warmtext/80 dark:text-darktext/80 flex items-center gap-2 transition-colors duration-300">
-          <Clock className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400 animate-pulse" />
+        <div className="fixed bottom-4 right-4 z-40 bg-[#FDFCFB]/95 dark:bg-darkbg/95 backdrop-blur-md border border-warmborder dark:border-white/10 rounded-xl px-4.5 py-2.5 shadow-md text-sm font-semibold font-mono text-warmtext dark:text-darktext flex items-center gap-2 transition-colors duration-300">
+          <Clock className="h-4 w-4 text-indigo-600 dark:text-indigo-400 animate-pulse" />
           <span>{currentTime}</span>
         </div>
       )}
