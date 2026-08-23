@@ -5,22 +5,20 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/client'
 import { BookOpen, LogOut, Menu, LayoutDashboard, Clock, History, Settings, X } from 'lucide-react'
-import type { User } from '@supabase/supabase-js'
 import ThemeToggle from '@/components/ThemeToggle'
 import { useDashboard } from '@/context/DashboardContext'
 
 interface DashboardLayoutClientProps {
   children: React.ReactNode
-  user: User | null
 }
 
-export default function DashboardLayoutClient({ children, user }: DashboardLayoutClientProps) {
+export default function DashboardLayoutClient({ children }: DashboardLayoutClientProps) {
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
-  const { profile } = useDashboard()
+  const { profile, user, authLoading } = useDashboard()
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Closed by default on both desktop and mobile
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Closed by default
   const [currentTime, setCurrentTime] = useState<string>('')
 
   // Start real-time clock tick
@@ -92,7 +90,7 @@ export default function DashboardLayoutClient({ children, user }: DashboardLayou
             <div className="text-right hidden sm:block border-l border-warmborder dark:border-white/10 pl-4">
               <p className="text-[9px] font-bold text-warmtext/50 dark:text-darktext/50 uppercase tracking-wider">Signed in as</p>
               <p className="text-xs font-bold text-warmtext/80 dark:text-darktext/80">
-                {profile.full_name || profile.username || user?.email}
+                {profile.full_name || profile.username || user?.email || 'Scholar'}
               </p>
             </div>
 
@@ -112,7 +110,16 @@ export default function DashboardLayoutClient({ children, user }: DashboardLayou
       <div className="flex-1 flex relative">
         {/* Full-width main container (no sidebars permanently showing) */}
         <main className="flex-grow p-6 md:p-8 w-full relative">
-          {children}
+          {authLoading ? (
+            <div className="flex flex-col items-center justify-center min-h-[350px] gap-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-600 dark:border-indigo-400" />
+              <span className="text-[10px] text-warmtext/40 dark:text-darktext/40 font-bold uppercase tracking-widest">
+                Authorizing study session...
+              </span>
+            </div>
+          ) : (
+            children
+          )}
         </main>
 
         {/* Semi-transparent dark overlay behind drawer */}

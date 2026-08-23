@@ -31,6 +31,7 @@ interface DashboardContextType {
     timestamp: string
   }) => Promise<void>
   handleDeleteSession: (id: string) => Promise<void>
+  authLoading: boolean
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined)
@@ -45,10 +46,9 @@ export function useDashboard() {
 
 interface DashboardProviderProps {
   children: ReactNode
-  user: User | null
 }
 
-export function DashboardProvider({ children, user }: DashboardProviderProps) {
+export function DashboardProvider({ children }: DashboardProviderProps) {
   const supabase = createClient()
 
   const isSupabaseConfigured =
@@ -57,26 +57,48 @@ export function DashboardProvider({ children, user }: DashboardProviderProps) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'your-supabase-anon-key'
 
+  const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<{ id: string; username: string; full_name: string | null }>({
-    id: user?.id || '',
-    username: user?.email?.split('@')[0] || 'user',
+    id: '',
+    username: 'user',
     full_name: '',
   })
   const [sessions, setSessions] = useState<StudySession[]>([])
   const [isOfflineMode, setIsOfflineMode] = useState(!isSupabaseConfigured)
   const [prefilledDuration, setPrefilledDuration] = useState<number | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
 
   // Fetch initial profile & study sessions from database exactly once on client mount
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!user || isOfflineMode) return
-
       try {
-        // Fetch user profile info
+        // Fetch user session first - local token verification is fast
+        const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser()
+
+        if (userError || !currentUser) {
+          // If no authenticated user, stop loading and allow redirects/offline
+          setUser(null)
+          setAuthLoading(false)
+          return
+        }
+
+        setUser(currentUser)
+        setProfile((prev) => ({
+          ...prev,
+          id: currentUser.id,
+          username: currentUser.email?.split('@')[0] || 'user',
+        }))
+
+        if (isOfflineMode) {
+          setAuthLoading(false)
+          return
+        }
+
+        // Fetch profile
         const { data: prof, error: profError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', user.id)
+          .eq('id', currentUser.id)
           .single()
 
         if (!profError && prof) {
@@ -87,20 +109,22 @@ export function DashboardProvider({ children, user }: DashboardProviderProps) {
         const { data: sess, error: sessError } = await supabase
           .from('study_sessions')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('user_id', currentUser.id)
           .order('timestamp', { ascending: false })
 
         if (!sessError && sess) {
           setSessions(sess)
         }
       } catch (err) {
-        console.error('Failed to load user credentials from Supabase. Defaulting to local storage cache.', err)
+        console.error('Failed to load user credentials from Supabase.', err)
         setIsOfflineMode(true)
+      } finally {
+        setAuthLoading(false)
       }
     }
 
     fetchUserData()
-  }, [user, isOfflineMode, supabase])
+  }, [isOfflineMode, supabase])
 
   // Sync state if offline mode cache takes over
   useEffect(() => {
@@ -200,6 +224,7 @@ export function DashboardProvider({ children, user }: DashboardProviderProps) {
         setPrefilledDuration,
         handleAddSession,
         handleDeleteSession,
+        authLoading,
       }}
     >
       {children}
