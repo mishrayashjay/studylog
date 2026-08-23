@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { StudySession } from './DashboardClient'
+import { StudySession } from '@/context/DashboardContext'
 import { Search, Calendar, Trash2, Clock, AlertCircle } from 'lucide-react'
 
 interface SessionHistoryProps {

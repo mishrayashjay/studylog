@@ -1,6 +1,6 @@
 'use client'
 
-import { StudySession } from './DashboardClient'
+import { StudySession } from '@/context/DashboardContext'
 import { Award, Clock, PieChart } from 'lucide-react'
 
 interface StatsProps {
