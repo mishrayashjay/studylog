@@ -186,8 +186,8 @@ export default function DashboardLayoutClient({ children, user }: DashboardLayou
 
       {/* Floating Real-Time Clock */}
       {currentTime && (
-        <div className="fixed bottom-4 right-4 z-40 bg-[#FDFCFB]/95 dark:bg-darkbg/95 backdrop-blur-md border border-warmborder dark:border-white/10 rounded-xl px-4.5 py-2.5 shadow-md text-sm font-semibold font-mono text-warmtext dark:text-darktext flex items-center gap-2">
-          <Clock className="h-4 w-4 text-indigo-600 dark:text-indigo-400 animate-pulse" />
+        <div className="fixed bottom-4 right-4 z-40 bg-[#FDFCFB] dark:bg-white/10 backdrop-blur-md border border-warmborder dark:border-white/20 rounded-xl px-4.5 py-2.5 shadow-md text-sm font-semibold font-mono text-warmtext dark:text-white flex items-center gap-2">
+          <Clock className="h-4 w-4 text-indigo-600 dark:text-indigo-300 animate-pulse" />
           <span>{currentTime}</span>
         </div>
       )}
