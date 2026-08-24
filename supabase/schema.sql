@@ -57,3 +57,29 @@ $$ language plpgsql security definer;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- Create notes table
+create table public.notes (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  title text not null default 'Untitled Note',
+  content text not null default '',
+  created_at timestamp with time zone default now() not null,
+  updated_at timestamp with time zone default now() not null
+);
+
+-- Enable Row Level Security (RLS)
+alter table public.notes enable row level security;
+
+-- Notes Policies
+create policy "Users can view their own notes" on public.notes
+  for select using (auth.uid() = user_id);
+
+create policy "Users can insert their own notes" on public.notes
+  for insert with check (auth.uid() = user_id);
+
+create policy "Users can update their own notes" on public.notes
+  for update using (auth.uid() = user_id);
+
+create policy "Users can delete their own notes" on public.notes
+  for delete using (auth.uid() = user_id);

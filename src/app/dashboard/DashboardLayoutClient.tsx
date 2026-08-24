@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/client'
-import { BookOpen, LogOut, Menu, LayoutDashboard, Clock, History, Settings, X } from 'lucide-react'
+import { BookOpen, LogOut, Menu, LayoutDashboard, Clock, History, Settings, X, Edit } from 'lucide-react'
 import ThemeToggle from '@/components/ThemeToggle'
 import { useDashboard } from '@/context/DashboardContext'
 
@@ -54,6 +54,7 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Focus Timer', href: '/dashboard/timer', icon: Clock },
     { name: 'History', href: '/dashboard/history', icon: History },
+    { name: 'Notes', href: '/dashboard/notes', icon: Edit },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ]
 
