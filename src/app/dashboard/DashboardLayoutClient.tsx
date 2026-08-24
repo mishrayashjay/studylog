@@ -64,8 +64,8 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
       <div className="absolute top-0 right-1/4 w-[300px] h-[300px] rounded-full bg-indigo-500/5 dark:bg-indigo-500/5 blur-[100px] pointer-events-none -z-10" />
       <div className="absolute bottom-10 left-1/4 w-[300px] h-[300px] rounded-full bg-purple-500/5 dark:bg-purple-500/5 blur-[100px] pointer-events-none -z-10" />
 
-      {/* Top Navigation Bar - flush to left edge */}
-      <nav className="sticky top-0 z-30 border-b border-warmborder dark:border-white/10 bg-warmbg/80 dark:bg-darkbg/80 backdrop-blur-md h-[69px] flex items-center px-6">
+      {/* Top Navigation Bar - flush to left edge, with balanced padding */}
+      <nav className="sticky top-0 z-30 border-b border-warmborder dark:border-white/10 bg-warmbg/80 dark:bg-darkbg/80 backdrop-blur-md h-[69px] flex items-center px-6 md:px-8">
         <div className="w-full flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Hamburger Toggle button */}
@@ -78,10 +78,10 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
             </button>
 
             <div className="flex items-center gap-2.5 ml-2">
-              <div className="p-1.5 bg-indigo-600 dark:bg-indigo-500 rounded-lg text-white shadow-sm">
+              <div className="p-1.5 bg-indigo-50 dark:bg-indigo-950/40 rounded-lg text-indigo-600 dark:text-indigo-400 shadow-xs">
                 <BookOpen className="h-4 w-4" />
               </div>
-              <span className="font-bold text-base tracking-tight font-display">studylog</span>
+              <span className="font-bold text-base tracking-tight font-display text-warmtext dark:text-darktext">studylog</span>
             </div>
           </div>
 
@@ -141,10 +141,10 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
             {/* Drawer Brand Header */}
             <div className="flex items-center justify-between pb-4 border-b border-warmborder/60 dark:border-white/10">
               <div className="flex items-center gap-2.5">
-                <div className="p-1.5 bg-indigo-600 dark:bg-indigo-500 rounded-lg text-white shadow-sm">
+                <div className="p-1.5 bg-indigo-50 dark:bg-indigo-950/40 rounded-lg text-indigo-600 dark:text-indigo-400 shadow-xs">
                   <BookOpen className="h-4 w-4" />
                 </div>
-                <span className="font-bold text-lg tracking-tight font-display">studylog</span>
+                <span className="font-bold text-lg tracking-tight font-display text-warmtext dark:text-darktext">studylog</span>
               </div>
               {/* Close icon button inside drawer */}
               <button

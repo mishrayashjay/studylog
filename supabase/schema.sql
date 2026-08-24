@@ -64,6 +64,7 @@ create table public.notes (
   user_id uuid references public.profiles(id) on delete cascade not null,
   title text not null default 'Untitled Note',
   content text not null default '',
+  category text not null default 'General',
   created_at timestamp with time zone default now() not null,
   updated_at timestamp with time zone default now() not null
 );

@@ -18,6 +18,7 @@ export interface Note {
   user_id: string
   title: string
   content: string
+  category?: string
   created_at: string
   updated_at: string
 }
@@ -41,7 +42,7 @@ interface DashboardContextType {
     timestamp: string
   }) => Promise<void>
   handleDeleteSession: (id: string) => Promise<void>
-  handleAddNote: (title?: string, content?: string) => Promise<Note>
+  handleAddNote: (title?: string, content?: string, category?: string) => Promise<Note>
   handleUpdateNote: (id: string, updates: Partial<Note>) => Promise<void>
   handleDeleteNote: (id: string) => Promise<void>
   authLoading: boolean
@@ -248,11 +249,12 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     }
   }
 
-  const handleAddNote = async (title = 'Untitled Note', content = '') => {
+  const handleAddNote = async (title = 'Untitled Note', content = '', category = 'General') => {
     const newNoteItem = {
       user_id: user?.id || 'local-user',
       title,
       content,
+      category,
     }
 
     if (isOfflineMode) {
