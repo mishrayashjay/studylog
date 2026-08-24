@@ -78,7 +78,7 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
             </button>
 
             <div className="flex items-center gap-2.5 ml-2">
-              <div className="p-1.5 bg-indigo-600 dark:bg-indigo-50 rounded-lg text-white shadow-sm">
+              <div className="p-1.5 bg-indigo-600 dark:bg-indigo-500 rounded-lg text-white shadow-sm">
                 <BookOpen className="h-4 w-4" />
               </div>
               <span className="font-bold text-base tracking-tight font-display">studylog</span>
@@ -141,7 +141,7 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
             {/* Drawer Brand Header */}
             <div className="flex items-center justify-between pb-4 border-b border-warmborder/60 dark:border-white/10">
               <div className="flex items-center gap-2.5">
-                <div className="p-1.5 bg-indigo-600 dark:bg-indigo-50 rounded-lg text-white shadow-sm">
+                <div className="p-1.5 bg-indigo-600 dark:bg-indigo-500 rounded-lg text-white shadow-sm">
                   <BookOpen className="h-4 w-4" />
                 </div>
                 <span className="font-bold text-lg tracking-tight font-display">studylog</span>
