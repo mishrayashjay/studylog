@@ -43,6 +43,7 @@ interface DashboardContextType {
   }) => Promise<void>
   handleDeleteSession: (id: string) => Promise<void>
   handleAddNote: (title?: string, content?: string, category?: string) => Promise<Note>
+  handleUpdateNoteState: (id: string, updates: Partial<Note>) => void
   handleUpdateNote: (id: string, updates: Partial<Note>) => Promise<void>
   handleDeleteNote: (id: string) => Promise<void>
   authLoading: boolean
@@ -62,8 +63,9 @@ interface DashboardProviderProps {
   children: ReactNode
 }
 
+const supabase = createClient()
+
 export function DashboardProvider({ children }: DashboardProviderProps) {
-  const supabase = createClient()
 
   const isSupabaseConfigured =
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -149,7 +151,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     }
 
     fetchUserData()
-  }, [isOfflineMode, supabase])
+  }, [isOfflineMode])
 
   // Sync state if offline mode cache takes over
   useEffect(() => {
@@ -305,16 +307,15 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
         throw err
       }
     }
-  }, [isOfflineMode, user, supabase])
+  }, [isOfflineMode, user])
 
-  const handleUpdateNote = useCallback(async (id: string, updates: Partial<Note>) => {
+  const handleUpdateNoteState = useCallback((id: string, updates: Partial<Note>) => {
     const updatedTime = new Date().toISOString()
     const fullUpdates = {
       ...updates,
       updated_at: updatedTime,
     }
 
-    // Optimistically update client state instantly, then sorting by updated_at descending
     setNotes((prevNotes) => {
       const updatedNotes = prevNotes.map((n) => (n.id === id ? { ...n, ...fullUpdates } : n))
       updatedNotes.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
@@ -323,28 +324,36 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
       }
       return updatedNotes
     })
+  }, [isOfflineMode, user])
 
-    if (!isOfflineMode) {
-      try {
-        const { error } = await supabase
-          .from('notes')
-          .update(fullUpdates)
-          .eq('id', id)
+  const handleUpdateNote = useCallback(async (id: string, updates: Partial<Note>) => {
+    if (isOfflineMode) return
 
-        if (error) throw error
-      } catch (err) {
-        console.error('Failed to update note in Supabase, falling back to local storage', err)
-        setIsOfflineMode(true)
-        setNotes((prevNotes) => {
-          if (user) {
-            localStorage.setItem(`studylog_notes_${user.id}`, JSON.stringify(prevNotes))
-          }
-          return prevNotes
-        })
-        throw err
-      }
+    const updatedTime = new Date().toISOString()
+    const fullUpdates = {
+      ...updates,
+      updated_at: updatedTime,
     }
-  }, [isOfflineMode, user, supabase])
+
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .update(fullUpdates)
+        .eq('id', id)
+
+      if (error) throw error
+    } catch (err) {
+      console.error('Failed to update note in Supabase, falling back to local storage', err)
+      setIsOfflineMode(true)
+      setNotes((prevNotes) => {
+        if (user) {
+          localStorage.setItem(`studylog_notes_${user.id}`, JSON.stringify(prevNotes))
+        }
+        return prevNotes
+      })
+      throw err
+    }
+  }, [isOfflineMode, user])
 
   const handleDeleteNote = useCallback(async (id: string) => {
     setNotes((prev) => {
@@ -371,7 +380,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
         throw err
       }
     }
-  }, [isOfflineMode, user, supabase])
+  }, [isOfflineMode, user])
 
   return (
     <DashboardContext.Provider
@@ -386,6 +395,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
         handleAddSession,
         handleDeleteSession,
         handleAddNote,
+        handleUpdateNoteState,
         handleUpdateNote,
         handleDeleteNote,
         authLoading,

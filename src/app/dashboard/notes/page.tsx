@@ -5,7 +5,7 @@ import { useDashboard } from '@/context/DashboardContext'
 import { Plus, Search, Trash2, Loader, Check, AlertCircle, FileText, Folder, X } from 'lucide-react'
 
 export default function NotesPage() {
-  const { notes, handleAddNote, handleUpdateNote, handleDeleteNote } = useDashboard()
+  const { notes, handleAddNote, handleUpdateNoteState, handleUpdateNote, handleDeleteNote } = useDashboard()
 
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -27,6 +27,9 @@ export default function NotesPage() {
   const activeNote = notes.find((n) => n.id === activeNoteId)
   const previousNoteId = useRef<string | null>(null)
 
+  // Track the values that have been persisted to the database to decouple autosave from UI updates
+  const lastSyncedValues = useRef({ title: '', content: '', category: 'General' })
+
   // Synchronize local state when active note changes
   useEffect(() => {
     if (activeNote) {
@@ -34,6 +37,11 @@ export default function NotesPage() {
         setLocalTitle(activeNote.title)
         setLocalContent(activeNote.content)
         setLocalCategory(activeNote.category || 'General')
+        lastSyncedValues.current = {
+          title: activeNote.title,
+          content: activeNote.content,
+          category: activeNote.category || 'General',
+        }
         setIsCreatingCategory(false)
         setCustomCategoryInput('')
         setSaveStatus('saved')
@@ -51,48 +59,97 @@ export default function NotesPage() {
     }
   }, [activeNote, activeNoteId])
 
-  // Debounced auto-save effect checking title, content, and category changes
+  // Debounced auto-save effect checking local changes against database-synced values
   useEffect(() => {
     if (!activeNote) return
 
+    // If local values match the database-synced copy, we don't need to write
     if (
-      localTitle === activeNote.title &&
-      localContent === activeNote.content &&
-      localCategory === (activeNote.category || 'General')
+      localTitle === lastSyncedValues.current.title &&
+      localContent === lastSyncedValues.current.content &&
+      localCategory === lastSyncedValues.current.category
     ) {
       return
     }
 
+    console.log('[Autosave] Change detected in editor! Starting 1.2s timer...', {
+      noteId: activeNote.id,
+      title: localTitle !== lastSyncedValues.current.title ? `"${lastSyncedValues.current.title}" -> "${localTitle}"` : 'unchanged',
+      content: localContent !== lastSyncedValues.current.content ? 'modified' : 'unchanged',
+      category: localCategory !== lastSyncedValues.current.category ? `"${lastSyncedValues.current.category}" -> "${localCategory}"` : 'unchanged',
+    })
+
     setSaveStatus('saving')
     const timer = setTimeout(async () => {
+      console.log('[Autosave] Timer expired! Sending database update to Supabase...', activeNote.id)
       try {
         await handleUpdateNote(activeNote.id, {
           title: localTitle,
           content: localContent,
           category: localCategory,
         })
+        console.log('[Autosave] Save successful for note:', activeNote.id)
+        
+        lastSyncedValues.current = {
+          title: localTitle,
+          content: localContent,
+          category: localCategory,
+        }
         setSaveStatus('saved')
       } catch (err) {
-        console.error('Failed to auto-save note', err)
+        console.error('[Autosave] Save failed in Supabase!', err)
         setSaveStatus('unsaved')
       }
     }, 1200)
 
-    return () => clearTimeout(timer)
+    return () => {
+      console.log('[Autosave] Cleaning up/cancelling previous timer.')
+      clearTimeout(timer)
+    }
   }, [localTitle, localContent, localCategory, activeNote, handleUpdateNote])
+
+  const handleTitleChange = (val: string) => {
+    setLocalTitle(val)
+    if (activeNoteId) {
+      handleUpdateNoteState(activeNoteId, { title: val })
+    }
+  }
+
+  const handleContentChange = (val: string) => {
+    setLocalContent(val)
+    if (activeNoteId) {
+      handleUpdateNoteState(activeNoteId, { content: val })
+    }
+  }
+
+  const handleCategoryChange = (val: string) => {
+    setLocalCategory(val)
+    if (activeNoteId) {
+      handleUpdateNoteState(activeNoteId, { category: val })
+    }
+  }
 
   const handleCreateNewNote = async () => {
     // Flush current note edits if unsaved
     if (saveStatus === 'saving' && activeNoteId) {
-      await handleUpdateNote(activeNoteId, {
-        title: localTitle,
-        content: localContent,
-        category: localCategory,
-      })
+      console.log('[CreateNote] Flushing unsaved changes before creating note...')
+      try {
+        await handleUpdateNote(activeNoteId, {
+          title: localTitle,
+          content: localContent,
+          category: localCategory,
+        })
+        lastSyncedValues.current = {
+          title: localTitle,
+          content: localContent,
+          category: localCategory,
+        }
+      } catch (e) {
+        console.error('[CreateNote] Flushing failed', e)
+      }
     }
 
     try {
-      // Create new note under current category filter if it is not 'All'
       const startCategory = selectedCategoryFilter !== 'All' ? selectedCategoryFilter : 'General'
       const newNote = await handleAddNote('Untitled Note', '', startCategory)
       setActiveNoteId(newNote.id)
@@ -104,11 +161,21 @@ export default function NotesPage() {
   const handleSelectNote = async (noteId: string) => {
     // Flush current note edits immediately before switching
     if (saveStatus === 'saving' && activeNoteId) {
-      await handleUpdateNote(activeNoteId, {
-        title: localTitle,
-        content: localContent,
-        category: localCategory,
-      })
+      console.log('[SelectNote] Flushing unsaved changes before switching notes...')
+      try {
+        await handleUpdateNote(activeNoteId, {
+          title: localTitle,
+          content: localContent,
+          category: localCategory,
+        })
+        lastSyncedValues.current = {
+          title: localTitle,
+          content: localContent,
+          category: localCategory,
+        }
+      } catch (e) {
+        console.error('[SelectNote] Flushing failed', e)
+      }
     }
     setActiveNoteId(noteId)
   }
@@ -136,7 +203,7 @@ export default function NotesPage() {
 
   const filterOptions = ['All', ...uniqueCategories]
 
-  // Filter notes by search text and selected category, sorted by last edited date
+  // Filter notes by search text and selected category
   const filteredNotes = notes.filter((n) => {
     const matchesSearch =
       n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -149,7 +216,7 @@ export default function NotesPage() {
     return matchesSearch && matchesCategory
   })
 
-  // Sort filtered notes by date (most recently updated first)
+  // Explicitly sort notes list by date (most recently updated first)
   filteredNotes.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
 
   const formatNoteDate = (isoString: string) => {
@@ -169,7 +236,6 @@ export default function NotesPage() {
     if (c === 'physics') return 'bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400 border-sky-200/40 dark:border-sky-500/10'
     if (c === 'chemistry') return 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200/40 dark:border-emerald-500/10'
     if (c === 'biology') return 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400 border-rose-200/40 dark:border-rose-500/10'
-    // Fallback colored tags:
     return 'bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400 border-purple-200/40 dark:border-purple-500/10'
   }
 
@@ -315,9 +381,9 @@ export default function NotesPage() {
                     </span>
                   )}
                   {saveStatus === 'unsaved' && (
-                    <span className="text-[10px] font-bold text-rose-500 flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-rose-500 flex items-center gap-1.5" title="Failed to sync with Supabase. Saved locally.">
                       <AlertCircle className="h-3.5 w-3.5" />
-                      <span>Save failure</span>
+                      <span>Save failed (saved locally)</span>
                     </span>
                   )}
                 </div>
@@ -357,7 +423,7 @@ export default function NotesPage() {
                   type="text"
                   placeholder="Note Title..."
                   value={localTitle}
-                  onChange={(e) => setLocalTitle(e.target.value)}
+                  onChange={(e) => handleTitleChange(e.target.value)}
                   className="w-full text-xl font-bold tracking-tight text-warmtext dark:text-darktext border-none focus:ring-0 focus:outline-none bg-transparent placeholder-warmtext/30 dark:placeholder-darktext/30 p-0"
                 />
               </div>
@@ -379,7 +445,7 @@ export default function NotesPage() {
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           const val = customCategoryInput.trim() || 'General'
-                          setLocalCategory(val)
+                          handleCategoryChange(val)
                           setIsCreatingCategory(false)
                           setCustomCategoryInput('')
                         }
@@ -390,7 +456,7 @@ export default function NotesPage() {
                       type="button"
                       onClick={() => {
                         const val = customCategoryInput.trim() || 'General'
-                        setLocalCategory(val)
+                        handleCategoryChange(val)
                         setIsCreatingCategory(false)
                         setCustomCategoryInput('')
                       }}
@@ -420,7 +486,7 @@ export default function NotesPage() {
                           setIsCreatingCategory(true)
                           setCustomCategoryInput('')
                         } else {
-                          setLocalCategory(e.target.value)
+                          handleCategoryChange(e.target.value)
                         }
                       }}
                       className="px-2 py-0.5 border border-warmborder dark:border-white/15 rounded-lg bg-transparent text-warmtext dark:text-darktext text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none cursor-pointer"
@@ -444,7 +510,7 @@ export default function NotesPage() {
                 <textarea
                   placeholder="Start writing study insights here..."
                   value={localContent}
-                  onChange={(e) => setLocalContent(e.target.value)}
+                  onChange={(e) => handleContentChange(e.target.value)}
                   className="w-full h-full text-sm text-warmtext/80 dark:text-darktext/80 border-none focus:ring-0 focus:outline-none bg-transparent resize-none p-0 leading-relaxed placeholder-warmtext/30 dark:placeholder-darktext/30"
                 />
               </div>
