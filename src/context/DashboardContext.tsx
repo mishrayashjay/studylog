@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import type { User } from '@supabase/supabase-js'
 
@@ -249,7 +249,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     }
   }
 
-  const handleAddNote = async (title = 'Untitled Note', content = '', category = 'General') => {
+  const handleAddNote = useCallback(async (title = 'Untitled Note', content = '', category = 'General') => {
     const newNoteItem = {
       user_id: user?.id || 'local-user',
       title,
@@ -264,11 +264,13 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
-      const updated = [noteWithId, ...notes]
-      setNotes(updated)
-      if (user) {
-        localStorage.setItem(`studylog_notes_${user.id}`, JSON.stringify(updated))
-      }
+      setNotes((prev) => {
+        const updated = [noteWithId, ...prev]
+        if (user) {
+          localStorage.setItem(`studylog_notes_${user.id}`, JSON.stringify(updated))
+        }
+        return updated
+      })
       return noteWithId
     } else {
       try {
@@ -280,8 +282,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
         if (error) throw error
 
         if (data && data[0]) {
-          const updated = [data[0], ...notes]
-          setNotes(updated)
+          setNotes((prev) => [data[0], ...prev])
           return data[0]
         }
         throw new Error('Failed to insert note')
@@ -294,17 +295,19 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         }
-        const updated = [noteWithId, ...notes]
-        setNotes(updated)
-        if (user) {
-          localStorage.setItem(`studylog_notes_${user.id}`, JSON.stringify(updated))
-        }
-        return noteWithId
+        setNotes((prev) => {
+          const updated = [noteWithId, ...prev]
+          if (user) {
+            localStorage.setItem(`studylog_notes_${user.id}`, JSON.stringify(updated))
+          }
+          return updated
+        })
+        throw err
       }
     }
-  }
+  }, [isOfflineMode, user, supabase])
 
-  const handleUpdateNote = async (id: string, updates: Partial<Note>) => {
+  const handleUpdateNote = useCallback(async (id: string, updates: Partial<Note>) => {
     const updatedTime = new Date().toISOString()
     const fullUpdates = {
       ...updates,
@@ -312,15 +315,16 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     }
 
     // Optimistically update client state instantly, then sorting by updated_at descending
-    const updatedNotes = notes.map((n) => (n.id === id ? { ...n, ...fullUpdates } : n))
-    updatedNotes.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-    setNotes(updatedNotes)
-
-    if (isOfflineMode) {
-      if (user) {
+    setNotes((prevNotes) => {
+      const updatedNotes = prevNotes.map((n) => (n.id === id ? { ...n, ...fullUpdates } : n))
+      updatedNotes.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+      if (isOfflineMode && user) {
         localStorage.setItem(`studylog_notes_${user.id}`, JSON.stringify(updatedNotes))
       }
-    } else {
+      return updatedNotes
+    })
+
+    if (!isOfflineMode) {
       try {
         const { error } = await supabase
           .from('notes')
@@ -331,34 +335,43 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
       } catch (err) {
         console.error('Failed to update note in Supabase, falling back to local storage', err)
         setIsOfflineMode(true)
-        if (user) {
-          localStorage.setItem(`studylog_notes_${user.id}`, JSON.stringify(updatedNotes))
-        }
+        setNotes((prevNotes) => {
+          if (user) {
+            localStorage.setItem(`studylog_notes_${user.id}`, JSON.stringify(prevNotes))
+          }
+          return prevNotes
+        })
+        throw err
       }
     }
-  }
+  }, [isOfflineMode, user, supabase])
 
-  const handleDeleteNote = async (id: string) => {
-    const updated = notes.filter((n) => n.id !== id)
-    setNotes(updated)
-
-    if (isOfflineMode) {
-      if (user) {
+  const handleDeleteNote = useCallback(async (id: string) => {
+    setNotes((prev) => {
+      const updated = prev.filter((n) => n.id !== id)
+      if (isOfflineMode && user) {
         localStorage.setItem(`studylog_notes_${user.id}`, JSON.stringify(updated))
       }
-    } else {
+      return updated
+    })
+
+    if (!isOfflineMode) {
       try {
         const { error } = await supabase.from('notes').delete().eq('id', id)
         if (error) throw error
       } catch (err) {
         console.error('Failed to delete note from Supabase, falling back to local storage', err)
         setIsOfflineMode(true)
-        if (user) {
-          localStorage.setItem(`studylog_notes_${user.id}`, JSON.stringify(updated))
-        }
+        setNotes((prev) => {
+          if (user) {
+            localStorage.setItem(`studylog_notes_${user.id}`, JSON.stringify(prev))
+          }
+          return prev
+        })
+        throw err
       }
     }
-  }
+  }, [isOfflineMode, user, supabase])
 
   return (
     <DashboardContext.Provider
