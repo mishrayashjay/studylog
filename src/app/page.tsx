@@ -118,7 +118,21 @@ export default function Home() {
                     <div className="p-1.5 rounded-full bg-emerald-600 dark:bg-emerald-50 text-white"><Square className="h-3 w-3 fill-white" /></div>
                   </div>
                 </div>
-                <div className="bg-[#FDFCFB] dark:bg-white/5 p-3.5 rounded-xl border border-warmborder dark:border-white/10 h-20" />
+                <div className="bg-[#FDFCFB] dark:bg-white/5 p-3 rounded-xl border border-warmborder dark:border-white/10 flex flex-col justify-between h-20 text-[9px] transition-colors duration-300">
+                  <div className="flex justify-between items-center text-warmtext/40 dark:text-darktext/40 font-bold uppercase tracking-wider text-[7px]">
+                    <span>Recent Note</span>
+                    <span>2m ago</span>
+                  </div>
+                  <div>
+                    <p className="font-bold text-warmtext/80 dark:text-darktext/80 truncate">Algorithms Review</p>
+                    <p className="text-warmtext/50 dark:text-darktext/40 truncate text-[8px] mt-0.5 leading-tight">Binary Search &amp; QuickSort...</p>
+                  </div>
+                  <div className="flex gap-1">
+                    <span className="text-[6px] px-1 py-0.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded border border-indigo-100 dark:border-indigo-500/20 font-bold uppercase tracking-widest leading-none">
+                      DSA
+                    </span>
+                  </div>
+                </div>
               </div>
               {/* Right Column: Stats & Breakdown */}
               <div className="col-span-7 space-y-4">
@@ -200,6 +214,17 @@ export default function Home() {
               Secure authentication and storage. Your study logs and streak histories are synchronized instantly across all your devices.
             </p>
           </div>
+        </div>
+
+        {/* Why I Built This Section */}
+        <div className="mt-28 border-t border-warmborder/60 dark:border-white/10 pt-16 max-w-2xl mx-auto text-center transition-colors duration-300">
+          <h2 className="font-bold text-xl sm:text-2xl text-warmtext dark:text-darktext font-display">Why I Built This</h2>
+          <p className="mt-6 text-sm sm:text-base text-warmtext/70 dark:text-darktext/70 leading-relaxed font-serif italic max-w-xl mx-auto">
+            &ldquo;I used to sit down to study, and after a while I&apos;d get restless and just close everything &mdash; no real record of how long I&apos;d actually studied, or what I&apos;d covered. I built studylog to keep myself accountable: track my focus time, see my streaks, and actually know where my hours are going. If you&apos;ve ever felt the same way, I hope this helps you too.&rdquo;
+          </p>
+          <p className="mt-4 text-[10px] font-bold text-warmtext/40 dark:text-darktext/40 uppercase tracking-widest text-center">
+            &mdash; Yash Jay Mishra
+          </p>
         </div>
       </main>
 
