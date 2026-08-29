@@ -65,7 +65,7 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
       <div className="absolute bottom-10 left-1/4 w-[300px] h-[300px] rounded-full bg-purple-500/5 dark:bg-purple-500/5 blur-[100px] pointer-events-none -z-10" />
 
       {/* Top Navigation Bar - flush to left edge, with balanced padding */}
-      <nav className="sticky top-0 z-30 border-b border-warmborder dark:border-white/10 bg-warmbg/80 dark:bg-darkbg/80 backdrop-blur-md h-[69px] flex items-center px-6 md:px-8">
+      <nav className="sticky top-0 z-30 border-b border-warmborder dark:border-white/10 bg-[#FAF7F2]/80 dark:bg-[#1C1A18]/80 backdrop-blur-md h-[69px] flex items-center px-6 md:px-8">
         <div className="w-full flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Hamburger Toggle button */}

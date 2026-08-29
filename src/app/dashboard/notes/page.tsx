@@ -271,7 +271,7 @@ export default function NotesPage() {
                 placeholder="Search notes title or body..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3.5 py-1.5 border border-warmborder dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-warmbg dark:bg-darkbg/40 text-warmtext dark:text-darktext text-xs transition-all duration-300"
+                className="w-full pl-9 pr-3.5 py-1.5 border border-warmborder dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-warmbg dark:bg-white/5 text-warmtext dark:text-darktext text-xs transition-all duration-300"
               />
               <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-warmtext/40 dark:text-darktext/40" />
             </div>
@@ -281,7 +281,7 @@ export default function NotesPage() {
               <select
                 value={selectedCategoryFilter}
                 onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                className="w-full pl-9 pr-8 py-1.5 border border-warmborder dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-warmbg dark:bg-darkbg/40 text-warmtext/80 dark:text-darktext/80 text-xs appearance-none cursor-pointer font-semibold transition-colors duration-300"
+                className="w-full pl-9 pr-8 py-1.5 border border-warmborder dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-warmbg dark:bg-white/5 text-warmtext/80 dark:text-darktext/80 text-xs appearance-none cursor-pointer font-semibold transition-colors duration-300"
               >
                 {filterOptions.map((cat) => (
                   <option key={cat} value={cat}>
