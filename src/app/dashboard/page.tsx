@@ -142,6 +142,34 @@ export default function DashboardOverviewPage() {
   }, [])
 
   const currentQuote = MOTIVATIONAL_QUOTES[quoteIndex]
+
+  // ── Live Current Date / Time Clock (Updating live every second) ──
+  const [currentTime, setCurrentTime] = useState<Date | null>(null)
+
+  useEffect(() => {
+    setCurrentTime(new Date())
+    const timer = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const formattedLiveDateTime = useMemo(() => {
+    if (!currentTime) return ''
+    const datePart = currentTime.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    })
+    const timePart = currentTime.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    })
+    return `${datePart} · ${timePart}`
+  }, [currentTime])
   
   // Custom subject creation in "Today's Focus"
   const [selectedSubject, setSelectedSubject] = useState<string>('')
@@ -210,6 +238,33 @@ export default function DashboardOverviewPage() {
   const realStreak = useMemo(() => {
     return calculateRealStreak(sessions)
   }, [sessions])
+
+  // 7 Days of the active week with calendar dates (e.g. Mon Aug 25)
+  const weekDays = useMemo(() => {
+    const now = new Date()
+    const currentDay = now.getDay()
+    const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay
+
+    const monday = new Date(now)
+    monday.setDate(now.getDate() + mondayOffset)
+    monday.setHours(0, 0, 0, 0)
+
+    return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((dayName, idx) => {
+      const d = new Date(monday)
+      d.setDate(monday.getDate() + idx)
+      const monthStr = d.toLocaleDateString([], { month: 'short' })
+      const dayNum = d.getDate()
+      const isToday = d.toDateString() === now.toDateString()
+
+      return {
+        dayName,
+        monthStr,
+        dayNum,
+        dateLabel: `${monthStr} ${dayNum}`,
+        isToday,
+      }
+    })
+  }, [])
 
   // Real Weekly Aggregation & Metrics
   const realStats = useMemo(() => {
@@ -296,18 +351,44 @@ export default function DashboardOverviewPage() {
     }
   }, [sessions])
 
-  // Chart SVG Coordinates
+  // Chart SVG Coordinates with distinct, non-duplicate Y-axis intervals and room for dates
   const chartPoints = useMemo(() => {
     const W = 600
-    const H = 160
-    const paddingX = 30
-    const paddingY = 25
-    
-    const maxVal = Math.max(2, Math.ceil(Math.max(...realStats.dayHours) * 1.2))
+    const H = 180
+    const paddingX = 35
+    const paddingYTop = 20
+    const paddingYBottom = 48
+    const plotH = H - paddingYTop - paddingYBottom
+
+    const maxData = Math.max(...realStats.dayHours)
+    let maxVal = 2
+    if (maxData > 8) {
+      maxVal = Math.ceil(maxData / 4) * 4
+    } else if (maxData > 4) {
+      maxVal = Math.ceil(maxData / 2) * 2
+    } else if (maxData > 2) {
+      maxVal = 4
+    } else if (maxData > 1) {
+      maxVal = 2
+    } else {
+      maxVal = 2
+    }
+
+    const yTicks = [
+      { val: maxVal, y: paddingYTop },
+      { val: maxVal * 0.75, y: paddingYTop + plotH * 0.25 },
+      { val: maxVal * 0.5, y: paddingYTop + plotH * 0.5 },
+      { val: maxVal * 0.25, y: paddingYTop + plotH * 0.75 },
+      { val: 0, y: paddingYTop + plotH },
+    ].map((tick) => ({
+      ...tick,
+      label: tick.val === 0 ? '0' : tick.val % 1 === 0 ? `${tick.val}h` : `${tick.val.toFixed(1)}h`,
+    }))
+
     const stepX = (W - paddingX * 2) / 6
     const points = realStats.dayHours.map((val, idx) => {
       const x = paddingX + idx * stepX
-      const y = H - paddingY - (val / maxVal) * (H - paddingY * 2)
+      const y = paddingYTop + plotH - (val / maxVal) * plotH
       return { x, y, val }
     })
 
@@ -318,9 +399,9 @@ export default function DashboardOverviewPage() {
       return `${acc} C ${cx},${prev.y} ${cx},${pt.y} ${pt.x},${pt.y}`
     }, '')
 
-    const areaD = `${pathD} L ${points[points.length - 1].x},${H - paddingY} L ${points[0].x},${H - paddingY} Z`
+    const areaD = `${pathD} L ${points[points.length - 1].x},${paddingYTop + plotH} L ${points[0].x},${paddingYTop + plotH} Z`
 
-    return { points, pathD, areaD, W, H, paddingY, maxVal }
+    return { points, pathD, areaD, W, H, yTicks, paddingX, paddingYTop, plotH, maxVal }
   }, [realStats.dayHours])
 
   const formatTimestamp = (ts: string) => {
@@ -391,9 +472,20 @@ export default function DashboardOverviewPage() {
             </span>
             <span className="text-2xl">👋</span>
           </h1>
-          <p className="text-theme-muted text-xs sm:text-sm mt-1">
-            Every page you read today is a step toward your goals.
-          </p>
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-xs sm:text-sm mt-1">
+            <p className="text-theme-muted">
+              Every page you read today is a step toward your goals.
+            </p>
+            {formattedLiveDateTime && (
+              <>
+                <span className="hidden sm:inline text-theme-border">•</span>
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-mono text-theme-text bg-theme-subtle px-2.5 py-0.5 rounded-lg border border-theme-border shadow-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                  <span>{formattedLiveDateTime}</span>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Right Action Bar */}
@@ -546,35 +638,29 @@ export default function DashboardOverviewPage() {
 
             {/* SVG Real Area Chart */}
             <div className="w-full overflow-x-auto">
-              <div className="min-w-[500px] relative">
-                <svg viewBox={`0 0 ${chartPoints.W} ${chartPoints.H}`} className="w-full h-44 overflow-visible">
+              <div className="min-w-[540px] relative">
+                <svg viewBox={`0 0 ${chartPoints.W} ${chartPoints.H}`} className="w-full h-48 overflow-visible">
                   <defs>
                     <linearGradient id="chartAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.3" />
+                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.32" />
                       <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.0" />
                     </linearGradient>
                   </defs>
 
-                  {/* Y-Axis Grid Lines & Labels */}
-                  {[
-                    { label: `${chartPoints.maxVal}h`, y: 25 },
-                    { label: `${(chartPoints.maxVal * 0.75).toFixed(0)}h`, y: 55 },
-                    { label: `${(chartPoints.maxVal * 0.5).toFixed(0)}h`, y: 85 },
-                    { label: `${(chartPoints.maxVal * 0.25).toFixed(0)}h`, y: 115 },
-                    { label: '0', y: 135 },
-                  ].map((grid, i) => (
+                  {/* Distinct, Non-Duplicate Y-Axis Grid Lines & Labels */}
+                  {chartPoints.yTicks.map((grid, i) => (
                     <g key={i}>
                       <text x="0" y={grid.y + 3} fill="currentColor" className="text-theme-muted" fontSize="10" fontFamily="sans-serif">
                         {grid.label}
                       </text>
                       <line
-                        x1="22"
+                        x1="26"
                         y1={grid.y}
                         x2={chartPoints.W}
                         y2={grid.y}
                         stroke="currentColor"
                         className="text-theme-border"
-                        strokeDasharray={i === 4 ? 'none' : '3 3'}
+                        strokeDasharray={i === chartPoints.yTicks.length - 1 ? 'none' : '3 3'}
                       />
                     </g>
                   ))}
@@ -595,23 +681,46 @@ export default function DashboardOverviewPage() {
                     </g>
                   ))}
 
-                  {/* X-Axis Day Labels */}
-                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => {
-                    const x = 30 + idx * ((chartPoints.W - 60) / 6)
+                  {/* X-Axis Day & Calendar Date Labels */}
+                  {weekDays.map((dayInfo, idx) => {
+                    const x = chartPoints.paddingX + idx * ((chartPoints.W - chartPoints.paddingX * 2) / 6)
                     const val = realStats.dayHours[idx]
                     return (
-                      <text
-                        key={day}
-                        x={x}
-                        y="155"
-                        textAnchor="middle"
-                        fill="currentColor"
-                        className={val > 0 ? 'text-theme-text font-semibold' : 'text-theme-muted font-normal'}
-                        fontSize="11"
-                        fontFamily="sans-serif"
-                      >
-                        {day}
-                      </text>
+                      <g key={dayInfo.dayName} className="select-none">
+                        {/* Day Name (e.g. Mon) */}
+                        <text
+                          x={x}
+                          y={chartPoints.paddingYTop + chartPoints.plotH + 18}
+                          textAnchor="middle"
+                          fill="currentColor"
+                          className={dayInfo.isToday ? 'text-purple-400 font-bold' : val > 0 ? 'text-theme-text font-semibold' : 'text-theme-muted font-medium'}
+                          fontSize="11"
+                          fontFamily="sans-serif"
+                        >
+                          {dayInfo.dayName}
+                        </text>
+                        {/* Calendar Date (e.g. Aug 31) */}
+                        <text
+                          x={x}
+                          y={chartPoints.paddingYTop + chartPoints.plotH + 31}
+                          textAnchor="middle"
+                          fill="currentColor"
+                          className={dayInfo.isToday ? 'text-purple-400 font-bold' : 'text-theme-muted font-normal'}
+                          fontSize="9.5"
+                          fontFamily="sans-serif"
+                        >
+                          {dayInfo.dateLabel}
+                        </text>
+                        {/* Dot Indicator for Today */}
+                        {dayInfo.isToday && (
+                          <circle
+                            cx={x}
+                            cy={chartPoints.paddingYTop + chartPoints.plotH + 40}
+                            r="2"
+                            fill="#a855f7"
+                          />
+                        )}
+                      </g>
                     )
                   })}
                 </svg>
