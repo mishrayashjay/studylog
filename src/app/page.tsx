@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { BookOpen, Clock, Activity, ShieldCheck, Square, Award, RotateCcw, Pause } from "lucide-react";
-import ThemeToggle from "@/components/ThemeToggle";
+import Navbar from "@/components/Navbar";
 import ScrollClock from "@/components/ScrollClock";
 import AppShowcase from "@/components/AppShowcase";
 
@@ -14,25 +14,7 @@ export default function Home() {
       <div className="absolute top-[40%] right-[-80px] w-[400px] h-[400px] rounded-full bg-purple-500/[0.04] blur-[100px] pointer-events-none -z-10" />
 
       {/* ─── HEADER ─────────────────────────────────────────────── */}
-      <header className="border-b border-warmborder dark:border-white/10 bg-[#FAF7F2]/80 dark:bg-[#1C1A18]/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 md:px-10 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-600 dark:bg-indigo-500 rounded-xl text-white shadow-sm shadow-indigo-600/20">
-              <BookOpen className="h-5 w-5" />
-            </div>
-            <span className="font-bold text-xl tracking-tight font-display">studylog</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <Link href="/login" className="text-sm font-semibold px-3 py-1.5 text-warmtext/60 dark:text-darktext/60 hover:text-warmtext dark:hover:text-darktext transition-colors">
-              Sign In
-            </Link>
-            <Link href="/login?tab=signup" className="text-sm font-semibold px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-xl transition-all duration-200 shadow-sm shadow-indigo-600/10">
-              Get Started
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* ─── MAIN ────────────────────────────────────────────────── */}
       <main className="flex-1 z-10">
