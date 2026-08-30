@@ -64,9 +64,9 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
       <div className="absolute top-0 right-1/4 w-[300px] h-[300px] rounded-full bg-indigo-500/5 dark:bg-indigo-500/5 blur-[100px] pointer-events-none -z-10" />
       <div className="absolute bottom-10 left-1/4 w-[300px] h-[300px] rounded-full bg-purple-500/5 dark:bg-purple-500/5 blur-[100px] pointer-events-none -z-10" />
 
-      {/* Top Navigation Bar - flush to left edge, with balanced padding */}
+      {/* Top Navigation Bar - with balanced padding */}
       <nav className="sticky top-0 z-30 border-b border-warmborder dark:border-white/10 bg-[#FAF7F2]/80 dark:bg-[#1C1A18]/80 backdrop-blur-md h-[69px] flex items-center px-6 md:px-8">
-        <div className="w-full flex items-center justify-between">
+        <div className="w-full max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Hamburger Toggle button */}
             <button
@@ -109,7 +109,7 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
 
       {/* Main Grid: Content wrapper */}
       <div className="flex-1 flex relative">
-        {/* Full-width main container (no sidebars permanently showing) */}
+        {/* Full-width main container with centered content */}
         <main className="flex-grow p-6 md:p-8 w-full relative">
           {authLoading ? (
             <div className="flex flex-col items-center justify-center min-h-[350px] gap-3">
@@ -119,7 +119,9 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
               </span>
             </div>
           ) : (
-            children
+            <div className="max-w-7xl mx-auto w-full">
+              {children}
+            </div>
           )}
         </main>
 

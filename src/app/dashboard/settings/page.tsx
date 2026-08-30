@@ -114,7 +114,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-8 max-w-5xl mx-auto w-full pb-10">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-warmtext dark:text-darktext font-display">Settings</h1>
         <p className="text-warmtext/50 dark:text-darktext/50 text-xs mt-0.5">
@@ -123,26 +123,59 @@ export default function SettingsPage() {
       </div>
 
       <div className="space-y-6">
-        {/* Profile Card */}
-        <div className="bg-[#FDFCFB] dark:bg-white/5 p-6 rounded-2xl border border-warmborder dark:border-white/10 shadow-sm transition-colors duration-300">
-          <div className="flex items-center gap-1.5 mb-4">
-            <User className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400" />
-            <h2 className="text-xs font-bold uppercase tracking-wider text-warmtext/50 dark:text-darktext/50">Account Profile</h2>
+        {/* Top 2-Column Grid: Profile & System Status */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Profile Card */}
+          <div className="bg-[#FDFCFB] dark:bg-white/5 p-6 rounded-2xl border border-warmborder dark:border-white/10 shadow-sm transition-colors duration-300 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-1.5 mb-4">
+                <User className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400" />
+                <h2 className="text-xs font-bold uppercase tracking-wider text-warmtext/50 dark:text-darktext/50">Account Profile</h2>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <span className="block text-[10px] font-bold text-warmtext/40 dark:text-darktext/40 uppercase tracking-widest mb-1">Email Address</span>
+                  <p className="text-sm font-semibold text-warmtext dark:text-darktext">{user?.email || 'Offline Session'}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="block text-[10px] font-bold text-warmtext/40 dark:text-darktext/40 uppercase tracking-widest mb-1">Username</span>
+                    <p className="text-sm font-semibold text-warmtext dark:text-darktext">{profile.username}</p>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] font-bold text-warmtext/40 dark:text-darktext/40 uppercase tracking-widest mb-1">Full Name</span>
+                    <p className="text-sm font-semibold text-warmtext dark:text-darktext">{profile.full_name || '—'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-4">
+          {/* Database Status Info */}
+          <div className="bg-[#FDFCFB] dark:bg-white/5 p-6 rounded-2xl border border-warmborder dark:border-white/10 shadow-sm transition-colors duration-300 flex flex-col justify-between">
             <div>
-              <span className="block text-[10px] font-bold text-warmtext/40 dark:text-darktext/40 uppercase tracking-widest mb-1">Email Address</span>
-              <p className="text-sm font-semibold text-warmtext dark:text-darktext">{user?.email || 'Offline Session'}</p>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <span className="block text-[10px] font-bold text-warmtext/40 dark:text-darktext/40 uppercase tracking-widest mb-1">Username</span>
-                <p className="text-sm font-semibold text-warmtext dark:text-darktext">{profile.username}</p>
+              <div className="flex items-center gap-1.5 mb-4">
+                <Info className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400" />
+                <h2 className="text-xs font-bold uppercase tracking-wider text-warmtext/50 dark:text-darktext/50">System Status</h2>
               </div>
-              <div>
-                <span className="block text-[10px] font-bold text-warmtext/40 dark:text-darktext/40 uppercase tracking-widest mb-1">Full Name</span>
-                <p className="text-sm font-semibold text-warmtext dark:text-darktext">{profile.full_name || '—'}</p>
+
+              <div className="space-y-3 text-xs leading-relaxed text-warmtext/60 dark:text-darktext/60">
+                <div className="p-3 rounded-xl bg-warmbg dark:bg-white/5 border border-warmborder/60 dark:border-white/10 flex items-center justify-between">
+                  <span className="font-semibold text-warmtext/80 dark:text-darktext/80">Database Sync</span>
+                  <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                    isOfflineMode
+                      ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                      : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                  }`}>
+                    {isOfflineMode ? 'Offline Storage' : 'Supabase Cloud'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-warmtext/50 dark:text-darktext/50 leading-relaxed">
+                  {isOfflineMode
+                    ? 'Your data is being saved inside your local browser cache. To sync across multiple devices, define your Supabase credentials in .env.local.'
+                    : 'Your study logs and streak statistics are synchronized in the cloud and available on any authorized device.'}
+                </p>
               </div>
             </div>
           </div>
@@ -158,7 +191,7 @@ export default function SettingsPage() {
             Select an appearance style for your study logs. Pull the top-nav cord switch to toggle between your active light and dark preferences.
           </p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5">
             {THEMES.map((themeOption) => {
               const isSelected = currentTheme === themeOption.id
               return (
@@ -205,35 +238,18 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Database Status Info */}
-        <div className="bg-[#FDFCFB] dark:bg-white/5 p-6 rounded-2xl border border-warmborder dark:border-white/10 shadow-sm transition-colors duration-300">
-          <div className="flex items-center gap-1.5 mb-4">
-            <Info className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400" />
-            <h2 className="text-xs font-bold uppercase tracking-wider text-warmtext/50 dark:text-darktext/50">System Status</h2>
-          </div>
-
-          <div className="space-y-2 text-xs leading-relaxed text-warmtext/60 dark:text-darktext/60">
-            <p>
-              <span className="font-semibold text-warmtext/80 dark:text-darktext/80">Database Sync:</span>{' '}
-              {isOfflineMode ? 'Disabled (Offline Storage)' : 'Enabled (Supabase Cloud)'}
-            </p>
-            <p className="text-[11px] text-warmtext/50 dark:text-darktext/50">
-              {isOfflineMode
-                ? 'Your data is being saved inside your local browser cache. To sync across multiple devices, define your Supabase credentials in .env.local.'
-                : 'Your study logs and streak statistics are synchronized in the cloud and available on any authorized device.'}
-            </p>
-          </div>
-        </div>
-
         {/* Logout Action */}
-        <div className="border border-red-200/50 dark:border-red-500/20 bg-red-50/20 dark:bg-red-500/5 p-6 rounded-2xl">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-red-500 dark:text-red-400 mb-2">Actions</h3>
+        <div className="border border-red-200/50 dark:border-red-500/20 bg-red-50/20 dark:bg-red-500/5 p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-red-500 dark:text-red-400">Account Session</h3>
+            <p className="text-[11px] text-warmtext/50 dark:text-darktext/50 mt-0.5">End your current session on this device.</p>
+          </div>
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-colors duration-300"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-colors duration-300 shadow-xs"
           >
             <LogOut className="h-4 w-4" />
-            <span>Sign Out of Account</span>
+            <span>Sign Out</span>
           </button>
         </div>
       </div>
