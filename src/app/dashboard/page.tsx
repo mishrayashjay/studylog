@@ -23,11 +23,79 @@ import {
   CalendarDays,
   Pause,
   Play,
-  Square
+  Square,
+  Check
 } from 'lucide-react'
-import { useDashboard } from '@/context/DashboardContext'
+import { useDashboard, StudySession } from '@/context/DashboardContext'
 
 const SUBJECT_COLORS = ['#8b5cf6', '#3b82f6', '#06b6d4', '#f59e0b', '#ec4899', '#10b981']
+
+/**
+ * ── REAL CONSECUTIVE CALENDAR-DAY STREAK CALCULATION ──
+ * 
+ * Rules:
+ * 1. Calendar days run from 00:00 to 23:59:59 in the user's local timezone.
+ * 2. Active days are all unique local calendar days with at least one logged session.
+ * 3. If the user logged a session TODAY, we count consecutive days backwards from TODAY.
+ * 4. If the user did NOT log a session today, but DID log a session YESTERDAY,
+ *    the streak is still active and we count consecutive days backwards from YESTERDAY.
+ * 5. If the most recent session is 2+ days ago (missed today AND yesterday), the streak is 0.
+ */
+function calculateRealStreak(sessions: StudySession[]): number {
+  if (!sessions || sessions.length === 0) return 0
+
+  // Format a Date object as local YYYY-MM-DD string
+  const toLocalDateKey = (d: Date) => {
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  // Collect set of unique local calendar days with logged study sessions
+  const activeDays = new Set<string>()
+  sessions.forEach((s) => {
+    if (s.timestamp && s.duration > 0) {
+      activeDays.add(toLocalDateKey(new Date(s.timestamp)))
+    }
+  })
+
+  if (activeDays.size === 0) return 0
+
+  const now = new Date()
+  const todayKey = toLocalDateKey(now)
+
+  const yesterday = new Date(now)
+  yesterday.setDate(yesterday.getDate() - 1)
+  const yesterdayKey = toLocalDateKey(yesterday)
+
+  // Determine starting point for streak evaluation
+  let anchorDate: Date
+  if (activeDays.has(todayKey)) {
+    anchorDate = new Date(now)
+  } else if (activeDays.has(yesterdayKey)) {
+    anchorDate = new Date(yesterday)
+  } else {
+    // Both today and yesterday missed -> streak has reset to 0
+    return 0
+  }
+
+  // Count consecutive active days backwards from anchorDate
+  let streak = 0
+  const cursor = new Date(anchorDate)
+
+  while (true) {
+    const cursorKey = toLocalDateKey(cursor)
+    if (activeDays.has(cursorKey)) {
+      streak++
+      cursor.setDate(cursor.getDate() - 1) // step back 1 calendar day
+    } else {
+      break // unbroken sequence ends
+    }
+  }
+
+  return streak
+}
 
 export default function DashboardOverviewPage() {
   const {
@@ -46,28 +114,60 @@ export default function DashboardOverviewPage() {
   const [isNewSessionModalOpen, setIsNewSessionModalOpen] = useState(false)
   const [timeFilter, setTimeFilter] = useState<'This Week' | 'Last Week' | 'This Month'>('This Week')
   
+  // Custom subject creation in "Today's Focus"
+  const [selectedSubject, setSelectedSubject] = useState<string>('')
+  const [isCreatingCustomSubject, setIsCreatingCustomSubject] = useState(false)
+  const [customSubjectInput, setCustomSubjectInput] = useState('')
+
   // New session modal inputs
-  const [modalSubject, setModalSubject] = useState('Computer Science')
+  const [modalSubject, setModalSubject] = useState('')
   const [modalTopic, setModalTopic] = useState('')
   const [modalMinutes, setModalMinutes] = useState(60)
   const [isSubmittingSession, setIsSubmittingSession] = useState(false)
 
-  // Today's focus subject selector when idle
-  const [idleSubject, setIdleSubject] = useState('Computer Science')
+  // ── Compute Real User Created Subjects (No hardcoded mock subjects) ──
+  const userSubjects = useMemo(() => {
+    const set = new Set<string>()
+    sessions.forEach(s => {
+      if (s.subject && s.subject.trim()) {
+        set.add(s.subject.trim())
+      }
+    })
+    return Array.from(set)
+  }, [sessions])
+
+  // Current active chosen subject for new timers
+  const activeFocusSubject = useMemo(() => {
+    if (selectedSubject.trim()) return selectedSubject.trim()
+    if (userSubjects.length > 0) return userSubjects[0]
+    return 'General Study'
+  }, [selectedSubject, userSubjects])
+
+  // Handle adding custom subject on the fly
+  const handleApplyCustomSubject = () => {
+    if (customSubjectInput.trim()) {
+      setSelectedSubject(customSubjectInput.trim())
+      setTimerSubject(customSubjectInput.trim())
+      setCustomSubjectInput('')
+      setIsCreatingCustomSubject(false)
+    }
+  }
 
   // Submit quick session modal
   const handleModalAddSession = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!modalSubject.trim() || modalMinutes <= 0) return
+    const subj = modalSubject.trim() || activeFocusSubject
+    if (!subj || modalMinutes <= 0) return
     setIsSubmittingSession(true)
     try {
       await handleAddSession({
-        subject: modalSubject.trim(),
+        subject: subj,
         duration: modalMinutes * 60,
         notes: modalTopic.trim() || 'Study session',
         timestamp: new Date().toISOString(),
       })
       setModalTopic('')
+      setModalSubject('')
       setIsNewSessionModalOpen(false)
     } finally {
       setIsSubmittingSession(false)
@@ -77,53 +177,9 @@ export default function DashboardOverviewPage() {
   // ── Compute Pure Real Metrics from Live Sessions ──
   const displayName = profile.username || (user?.email ? user.email.split('@')[0] : 'Scholar')
 
-  // Real Consecutive Day Streak Calculation
+  // Real Consecutive Day Streak
   const realStreak = useMemo(() => {
-    if (!sessions || sessions.length === 0) return 0
-
-    const uniqueDays = new Set(
-      sessions.map((s) => {
-        const d = new Date(s.timestamp)
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-          d.getDate()
-        ).padStart(2, '0')}`
-      })
-    )
-
-    const formatDate = (d: Date) => {
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-        d.getDate()
-      ).padStart(2, '0')}`
-    }
-
-    const today = new Date()
-    const todayStr = formatDate(today)
-    const yesterday = new Date()
-    yesterday.setDate(today.getDate() - 1)
-    const yesterdayStr = formatDate(yesterday)
-
-    let streak = 0
-    let checkDate = new Date()
-
-    if (uniqueDays.has(todayStr)) {
-      checkDate = today
-    } else if (uniqueDays.has(yesterdayStr)) {
-      checkDate = yesterday
-    } else {
-      return 0
-    }
-
-    while (true) {
-      const dateStr = formatDate(checkDate)
-      if (uniqueDays.has(dateStr)) {
-        streak++
-        checkDate.setDate(checkDate.getDate() - 1)
-      } else {
-        break
-      }
-    }
-
-    return streak
+    return calculateRealStreak(sessions)
   }, [sessions])
 
   // Real Weekly Aggregation & Metrics
@@ -157,7 +213,7 @@ export default function DashboardOverviewPage() {
       const d = new Date(s.timestamp)
       
       // All-time subject tracking
-      const subj = s.subject || 'General'
+      const subj = s.subject || 'General Study'
       subjectMap[subj] = (subjectMap[subj] || 0) + s.duration
 
       // Today's focus time
@@ -797,7 +853,7 @@ export default function DashboardOverviewPage() {
                 </div>
               </div>
             ) : (
-              /* ── IDLE STATE VIEW (Genuine real stats & one-click start) ── */
+              /* ── IDLE STATE VIEW (Genuine real stats & custom subject selection) ── */
               <div className="flex flex-col items-center justify-center py-2 space-y-5">
                 <div className="relative w-40 h-40 flex items-center justify-center">
                   <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
@@ -824,35 +880,95 @@ export default function DashboardOverviewPage() {
                   </div>
                 </div>
 
-                {/* Quick Subject Select for Next Session */}
-                <div className="w-full space-y-2">
-                  <label className="block text-[11px] font-semibold text-zinc-400">Select Subject to Focus</label>
-                  <select
-                    value={idleSubject}
-                    onChange={(e) => {
-                      setIdleSubject(e.target.value)
-                      setTimerSubject(e.target.value)
-                    }}
-                    className="w-full px-3 py-2 rounded-xl bg-[#161a26] border border-white/10 text-xs text-white focus:outline-none focus:border-purple-500 cursor-pointer"
-                  >
-                    <option value="Computer Science">Computer Science</option>
-                    <option value="Mathematics">Mathematics</option>
-                    <option value="Physics">Physics</option>
-                    <option value="Chemistry">Chemistry</option>
-                    <option value="Biology">Biology</option>
-                    <option value="Literature">Literature</option>
-                    <option value="General Study">General Study</option>
-                  </select>
+                {/* Custom Subject Selector & Chips (NO hardcoded subjects!) */}
+                <div className="w-full space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[11px] font-semibold text-zinc-400">Subject to Study</label>
+                    {!isCreatingCustomSubject && (
+                      <button
+                        onClick={() => setIsCreatingCustomSubject(true)}
+                        className="text-[11px] text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-0.5 transition-colors"
+                      >
+                        <Plus className="h-3 w-3" />
+                        <span>Add Subject</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Inline New Subject Input */}
+                  {isCreatingCustomSubject ? (
+                    <div className="flex items-center gap-1.5 animate-in fade-in duration-200">
+                      <input
+                        type="text"
+                        placeholder="Type subject name..."
+                        value={customSubjectInput}
+                        onChange={(e) => setCustomSubjectInput(e.target.value)}
+                        autoFocus
+                        onKeyDown={(e) => e.key === 'Enter' && handleApplyCustomSubject()}
+                        className="flex-1 px-3 py-1.5 rounded-xl bg-[#161a26] border border-purple-500/40 text-xs text-white placeholder:text-zinc-500 focus:outline-none"
+                      />
+                      <button
+                        onClick={handleApplyCustomSubject}
+                        className="px-2.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-semibold"
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsCreatingCustomSubject(false)
+                          setCustomSubjectInput('')
+                        }}
+                        className="p-1.5 text-zinc-400 hover:text-white"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ) : userSubjects.length > 0 ? (
+                    /* User's previously created subject chips */
+                    <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+                      {userSubjects.map((subj) => {
+                        const isSelected = activeFocusSubject === subj
+                        return (
+                          <button
+                            key={subj}
+                            onClick={() => {
+                              setSelectedSubject(subj)
+                              setTimerSubject(subj)
+                            }}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                              isSelected
+                                ? 'bg-purple-600/30 border-purple-500 text-purple-200 shadow-xs'
+                                : 'bg-white/[0.03] border-white/[0.08] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]'
+                            }`}
+                          >
+                            {subj}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    /* Prompt when user has never logged any subject before */
+                    <div className="p-3 rounded-xl bg-white/[0.02] border border-dashed border-white/10 text-center space-y-2">
+                      <p className="text-xs text-zinc-400">No subjects created yet.</p>
+                      <button
+                        onClick={() => setIsCreatingCustomSubject(true)}
+                        className="px-3 py-1 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-300 rounded-lg text-xs font-semibold inline-flex items-center gap-1"
+                      >
+                        <Plus className="h-3 w-3" />
+                        <span>Type your first subject</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Quick Action Buttons */}
                 <div className="w-full space-y-2 pt-1 border-t border-white/[0.06]">
                   <button
-                    onClick={() => startTimer(idleSubject)}
+                    onClick={() => startTimer(activeFocusSubject)}
                     className="w-full py-2.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500 hover:opacity-95 text-white font-semibold text-xs rounded-xl shadow-md shadow-purple-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                   >
                     <Play className="h-3.5 w-3.5 fill-white" />
-                    <span>Start Focus Session</span>
+                    <span>Start Focus Session ({activeFocusSubject})</span>
                   </button>
 
                   <button
@@ -929,7 +1045,7 @@ export default function DashboardOverviewPage() {
                   type="text"
                   value={modalSubject}
                   onChange={(e) => setModalSubject(e.target.value)}
-                  placeholder="e.g. Computer Science, Mathematics"
+                  placeholder={activeFocusSubject || 'e.g. Mathematics, History'}
                   required
                   className="w-full px-3.5 py-2 rounded-xl bg-[#161a26] border border-white/10 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-purple-500"
                 />
@@ -941,7 +1057,7 @@ export default function DashboardOverviewPage() {
                   type="text"
                   value={modalTopic}
                   onChange={(e) => setModalTopic(e.target.value)}
-                  placeholder="e.g. Data Structures – Arrays"
+                  placeholder="e.g. Chapter 3 Problems"
                   className="w-full px-3.5 py-2 rounded-xl bg-[#161a26] border border-white/10 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-purple-500"
                 />
               </div>

@@ -7,12 +7,8 @@ import {
   BookOpen,
   LayoutDashboard,
   Clock,
-  BookMarked,
   Target,
-  Calendar,
   FileText,
-  BarChart2,
-  Award,
   Settings,
   Flame,
   ChevronDown,
@@ -41,19 +37,15 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
   }
 
   const navLinks = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: true },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Sessions', href: '/dashboard/history', icon: Clock },
-    { name: 'Subjects', href: '/dashboard/history?filter=subjects', icon: BookMarked },
-    { name: 'Goals', href: '/dashboard/timer', icon: Target },
-    { name: 'Calendar', href: '/dashboard/history?view=calendar', icon: Calendar },
+    { name: 'Focus Timer', href: '/dashboard/timer', icon: Target },
     { name: 'Notes', href: '/dashboard/notes', icon: FileText },
-    { name: 'Analytics', href: '/dashboard', icon: BarChart2 },
-    { name: 'Achievements', href: '/dashboard/settings', icon: Award },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ]
 
-  const displayName = profile.username || (user?.email ? user.email.split('@')[0] : 'mishrayashjay')
-  const initial = (displayName.charAt(0) || 'M').toUpperCase()
+  const displayName = profile.username || (user?.email ? user.email.split('@')[0] : 'Scholar')
+  const initial = (displayName.charAt(0) || 'S').toUpperCase()
 
   const sidebarContent = (
     <div className="flex flex-col justify-between h-full p-4.5 bg-[#07090e] text-white border-r border-white/[0.08] select-none">
@@ -71,9 +63,10 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
         {/* Navigation Items */}
         <nav className="space-y-1.5">
           {navLinks.map((link) => {
-            const isActive = link.exact
-              ? pathname === link.href
-              : pathname === link.href || (link.href !== '/dashboard' && pathname.startsWith(link.href.split('?')[0]))
+            const isActive =
+              link.href === '/dashboard'
+                ? pathname === '/dashboard'
+                : pathname === link.href || pathname.startsWith(`${link.href}/`)
 
             return (
               <Link
