@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import {
   Clock,
@@ -29,6 +29,30 @@ import {
 import { useDashboard, StudySession } from '@/context/DashboardContext'
 
 const SUBJECT_COLORS = ['#8b5cf6', '#3b82f6', '#06b6d4', '#f59e0b', '#ec4899', '#10b981']
+
+// Curated authentic quotes on discipline, focus, and learning with real author attributions
+const MOTIVATIONAL_QUOTES = [
+  { text: 'The expert in anything was once a beginner.', author: 'Helen Hayes' },
+  { text: 'Success is the sum of small efforts repeated day in and day out.', author: 'Robert Collier' },
+  { text: 'Discipline is the bridge between goals and accomplishment.', author: 'Jim Rohn' },
+  { text: 'It does not matter how slowly you go as long as you do not stop.', author: 'Confucius' },
+  { text: 'We are what we repeatedly do. Excellence, then, is not an act, but a habit.', author: 'Will Durant' },
+  { text: 'The secret of getting ahead is getting started.', author: 'Mark Twain' },
+  { text: 'Live as if you were to die tomorrow. Learn as if you were to live forever.', author: 'Mahatma Gandhi' },
+  { text: 'Energy and persistence conquer all things.', author: 'Benjamin Franklin' },
+  { text: 'Focus is a muscle. The more you practice it, the stronger it gets.', author: 'Cal Newport' },
+  { text: 'Action is the foundational key to all success.', author: 'Pablo Picasso' },
+  { text: "You don't have to be great to start, but you have to start to be great.", author: 'Zig Ziglar' },
+  { text: 'Continuous effort—not strength or intelligence—is the key to unlocking our potential.', author: 'Winston Churchill' },
+  { text: 'Small deeds done are better than great deeds planned.', author: 'Peter Marshall' },
+  { text: 'The capacity to learn is a gift; the ability to learn is a skill; the willingness to learn is a choice.', author: 'Brian Herbert' },
+  { text: 'Patience, persistence and perspiration make an unbeatable combination for success.', author: 'Napoleon Hill' },
+  { text: 'He who has a why to live can bear almost any how.', author: 'Friedrich Nietzsche' },
+  { text: "Do not wait; the time will never be 'just right.'", author: 'George Herbert' },
+  { text: 'The only limit to our realization of tomorrow will be our doubts of today.', author: 'Franklin D. Roosevelt' },
+  { text: 'An investment in knowledge pays the best interest.', author: 'Benjamin Franklin' },
+  { text: 'Clarity about what matters provides clarity about what does not.', author: 'Cal Newport' },
+]
 
 /**
  * ── REAL CONSECUTIVE CALENDAR-DAY STREAK CALCULATION ──
@@ -113,6 +137,27 @@ export default function DashboardOverviewPage() {
   // ── State for Interactive Features ──
   const [isNewSessionModalOpen, setIsNewSessionModalOpen] = useState(false)
   const [timeFilter, setTimeFilter] = useState<'This Week' | 'Last Week' | 'This Month'>('This Week')
+
+  // ── Rotating Motivational Quotes (Random on load, smooth fade every 12s) ──
+  const [quoteIndex, setQuoteIndex] = useState(() => Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length))
+  const [isQuoteVisible, setIsQuoteVisible] = useState(true)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // 1. Fade out current quote
+      setIsQuoteVisible(false)
+
+      // 2. After 350ms fade out, swap quote index and fade in
+      setTimeout(() => {
+        setQuoteIndex((prev) => (prev + 1) % MOTIVATIONAL_QUOTES.length)
+        setIsQuoteVisible(true)
+      }, 350)
+    }, 12000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  const currentQuote = MOTIVATIONAL_QUOTES[quoteIndex]
   
   // Custom subject creation in "Today's Focus"
   const [selectedSubject, setSelectedSubject] = useState<string>('')
@@ -384,11 +429,17 @@ export default function DashboardOverviewPage() {
 
         {/* Right Action Bar: Quote Card + Search + Bell + New Session Button */}
         <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
-          {/* Motivational Quote Card */}
-          <div className="hidden xl:flex items-center gap-2 bg-[#121520] border border-white/[0.08] px-3.5 py-2 rounded-xl text-xs text-zinc-300 shadow-sm max-w-xs">
-            <span className="text-purple-400 font-serif text-base leading-none">&ldquo;</span>
-            <span className="italic truncate">Discipline today, success tomorrow.</span>
-            <span className="text-zinc-400 text-[11px]">— Unknown</span>
+          {/* Motivational Quote Card with Smooth Fade Rotation */}
+          <div className="hidden xl:flex items-center gap-2 bg-[#121520] border border-white/[0.08] px-3.5 py-2 rounded-xl text-xs text-zinc-300 shadow-sm max-w-sm overflow-hidden">
+            <span className="text-purple-400 font-serif text-base leading-none shrink-0">&ldquo;</span>
+            <div
+              className={`flex items-center gap-1.5 min-w-0 transition-opacity duration-300 ease-in-out ${
+                isQuoteVisible ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <span className="italic truncate">{currentQuote.text}</span>
+              <span className="text-zinc-400 text-[11px] shrink-0">— {currentQuote.author}</span>
+            </div>
           </div>
 
           {/* Search Button */}
