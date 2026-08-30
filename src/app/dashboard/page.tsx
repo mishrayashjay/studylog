@@ -126,6 +126,7 @@ export default function DashboardOverviewPage() {
   // ── Rotating Motivational Quotes (Random on load, smooth fade every 12s) ──
   const [quoteIndex, setQuoteIndex] = useState(() => Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length))
   const [isQuoteVisible, setIsQuoteVisible] = useState(true)
+  const [isQuotePopoverOpen, setIsQuotePopoverOpen] = useState(false)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -465,7 +466,8 @@ export default function DashboardOverviewPage() {
 
       {/* ═══ 1. TOP HEADER ROW ════════════════════════════════════ */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="space-y-2">
+        {/* Left: Greeting & Subtitle */}
+        <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-theme-text font-display flex items-center gap-2">
             <span>Welcome back,</span>
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-indigo-400">
@@ -473,41 +475,75 @@ export default function DashboardOverviewPage() {
             </span>
             <span className="text-2xl">👋</span>
           </h1>
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="text-theme-muted text-xs sm:text-sm">
-              Every page you read today is a step toward your goals.
-            </p>
-            {formattedLiveDate && (
-              <div className="inline-flex items-center gap-2.5 bg-theme-subtle px-3 py-1.5 rounded-xl border border-theme-border shadow-xs">
-                <span className="relative flex h-2 w-2 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                </span>
-                <div className="flex flex-col leading-tight">
-                  <span className="text-xs font-semibold text-theme-text font-sans">
-                    {formattedLiveDate}
-                  </span>
-                  <span className="text-xs sm:text-sm font-bold font-mono text-purple-400 tracking-normal">
-                    {formattedLiveTime}
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
+          <p className="text-theme-muted text-xs sm:text-sm">
+            Every page you read today is a step toward your goals.
+          </p>
         </div>
 
         {/* Right Action Bar */}
         <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
-          {/* Motivational Quote Card with Smooth Fade Rotation */}
-          <div className="hidden xl:flex items-center gap-2 bg-theme-card border border-theme-border px-3.5 py-2 rounded-xl text-xs text-theme-text shadow-sm max-w-sm overflow-hidden">
-            <span className="text-purple-400 font-serif text-base leading-none shrink-0">&ldquo;</span>
+          {/* Live Date & Time Pill with Vertically Centered Live Indicator & Proper Spacing */}
+          {formattedLiveDate && (
+            <div className="flex items-center gap-3 bg-theme-card border border-theme-border px-4 py-2 rounded-2xl shadow-xs shrink-0">
+              <div className="flex items-center justify-center shrink-0 self-center">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                </span>
+              </div>
+              <div className="flex flex-col justify-center space-y-0.5 min-w-0">
+                <span className="text-xs font-semibold text-theme-text whitespace-nowrap">
+                  {formattedLiveDate}
+                </span>
+                <span className="text-xs sm:text-sm font-bold font-mono text-purple-400 tracking-wide whitespace-nowrap">
+                  {formattedLiveTime}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Motivational Quote Card with Smooth Fade Rotation & Hover Tooltip */}
+          <div
+            className="relative group hidden xl:flex items-center"
+            onMouseEnter={() => setIsQuotePopoverOpen(true)}
+            onMouseLeave={() => setIsQuotePopoverOpen(false)}
+            onClick={() => setIsQuotePopoverOpen((prev) => !prev)}
+          >
+            {/* Collapsed Card */}
+            <div className="flex items-center gap-2 bg-theme-card hover:bg-theme-subtle border border-theme-border px-3.5 py-2.5 rounded-2xl text-xs text-theme-text shadow-xs max-w-xs cursor-pointer transition-all">
+              <span className="text-purple-400 font-serif text-base leading-none shrink-0">&ldquo;</span>
+              <div
+                className={`flex items-center gap-1.5 min-w-0 transition-opacity duration-300 ease-in-out ${
+                  isQuoteVisible ? 'opacity-100' : 'opacity-0'
+                }`}
+              >
+                <span className="italic truncate">{currentQuote.text}</span>
+                <span className="text-theme-muted text-[11px] shrink-0">— {currentQuote.author}</span>
+              </div>
+            </div>
+
+            {/* Full Quote Tooltip / Popover (Appears on Hover or Tap) */}
             <div
-              className={`flex items-center gap-1.5 min-w-0 transition-opacity duration-300 ease-in-out ${
-                isQuoteVisible ? 'opacity-100' : 'opacity-0'
+              className={`absolute bottom-full right-0 mb-2.5 z-50 w-72 sm:w-80 p-4 bg-theme-card border border-theme-border rounded-2xl shadow-2xl transition-all duration-200 pointer-events-none ${
+                isQuotePopoverOpen
+                  ? 'opacity-100 translate-y-0 scale-100'
+                  : 'opacity-0 translate-y-1 scale-95 pointer-events-none'
               }`}
             >
-              <span className="italic truncate">{currentQuote.text}</span>
-              <span className="text-theme-muted text-[11px] shrink-0">— {currentQuote.author}</span>
+              <div className="space-y-2.5">
+                <div className="flex items-start gap-2">
+                  <span className="text-purple-400 font-serif text-xl leading-none shrink-0">&ldquo;</span>
+                  <p className="text-xs sm:text-sm italic text-theme-text leading-relaxed font-serif">
+                    {currentQuote.text}&rdquo;
+                  </p>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-theme-border">
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-purple-400">Quote of the Day</span>
+                  <span className="text-xs font-semibold text-theme-muted">— {currentQuote.author}</span>
+                </div>
+              </div>
+              {/* Downward Caret Arrow */}
+              <div className="absolute right-8 top-full w-0 h-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-theme-border" />
             </div>
           </div>
 
