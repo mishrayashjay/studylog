@@ -10,7 +10,6 @@ import {
   Target,
   FileText,
   Settings,
-  Flame,
   ChevronDown,
   Menu,
   X,
@@ -87,28 +86,8 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
         </nav>
       </div>
 
-      {/* Bottom Area: Motivational Card + User Profile */}
-      <div className="space-y-4 pt-4 border-t border-white/[0.06]">
-        {/* "Keep going!" Motivational Card */}
-        <div className="p-3.5 rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.02] border border-white/[0.08] shadow-inner">
-          <div className="flex items-center gap-2 mb-1.5">
-            <Flame className="h-4 w-4 text-amber-400 fill-amber-400/20" />
-            <span className="text-xs font-bold text-white tracking-tight">Keep going!</span>
-          </div>
-          <p className="text-[11px] text-zinc-400 leading-relaxed mb-3">
-            You&apos;re building something great. Consistency is the key.
-          </p>
-          <div className="space-y-1">
-            <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
-              <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 w-3/4" />
-            </div>
-            <div className="text-right">
-              <span className="text-[10px] font-mono font-bold text-zinc-400">75%</span>
-            </div>
-          </div>
-        </div>
-
-        {/* User Profile Row */}
+      {/* Bottom Area: User Profile Row */}
+      <div className="pt-4 border-t border-white/[0.06]">
         <div className="flex items-center justify-between px-2 py-1.5 rounded-xl hover:bg-white/[0.04] transition-colors cursor-pointer group">
           <Link href="/dashboard/settings" className="flex items-center gap-3 flex-1 min-w-0">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shadow-sm shrink-0">

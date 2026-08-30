@@ -27,6 +27,8 @@ export interface ActiveTimerState {
   isRunning: boolean
   seconds: number
   subject: string
+  mode: 'stopwatch' | 'timer'
+  targetDuration: number // seconds for timer countdown (e.g. 1500 = 25m)
 }
 
 interface DashboardContextType {
@@ -38,6 +40,8 @@ interface DashboardContextType {
   }
   sessions: StudySession[]
   notes: Note[]
+  customSubjects: string[]
+  addCustomSubject: (subject: string) => void
   isOfflineMode: boolean
   prefilledDuration: number | null
   setPrefilledDuration: (duration: number | null) => void
@@ -58,6 +62,8 @@ interface DashboardContextType {
   pauseTimer: () => void
   resetTimer: () => void
   setTimerSubject: (subject: string) => void
+  setTimerMode: (mode: 'stopwatch' | 'timer') => void
+  setTimerTargetDuration: (duration: number) => void
   stopAndLogTimer: (notes?: string) => Promise<void>
 }
 
@@ -93,9 +99,40 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
   })
   const [sessions, setSessions] = useState<StudySession[]>([])
   const [notes, setNotes] = useState<Note[]>([])
+  const [customSubjects, setCustomSubjects] = useState<string[]>([])
   const [isOfflineMode, setIsOfflineMode] = useState(!isSupabaseConfigured)
   const [prefilledDuration, setPrefilledDuration] = useState<number | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
+
+  // Load custom subjects from localStorage on client mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('studylog_custom_subjects')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed)) {
+          setCustomSubjects(parsed)
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  const addCustomSubject = useCallback((newSubject: string) => {
+    const trimmed = newSubject.trim()
+    if (!trimmed) return
+    setCustomSubjects((prev) => {
+      if (prev.includes(trimmed)) return prev
+      const updated = [trimmed, ...prev]
+      try {
+        localStorage.setItem('studylog_custom_subjects', JSON.stringify(updated))
+      } catch {
+        // ignore
+      }
+      return updated
+    })
+  }, [])
 
   // Fetch initial profile, study sessions, and notes from database exactly once on client mount
   useEffect(() => {
@@ -407,7 +444,9 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
   const [timerState, setTimerState] = useState<ActiveTimerState>({
     isRunning: false,
     seconds: 0,
-    subject: 'Computer Science',
+    subject: '',
+    mode: 'timer',
+    targetDuration: 1500, // 25 mins default
   })
 
   // Precision timer tick
@@ -415,7 +454,14 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     let interval: NodeJS.Timeout | null = null
     if (timerState.isRunning) {
       interval = setInterval(() => {
-        setTimerState((prev) => ({ ...prev, seconds: prev.seconds + 1 }))
+        setTimerState((prev) => {
+          const nextSecs = prev.seconds + 1
+          if (prev.mode === 'timer' && nextSecs >= prev.targetDuration) {
+            // Reached countdown target
+            return { ...prev, seconds: prev.targetDuration, isRunning: false }
+          }
+          return { ...prev, seconds: nextSecs }
+        })
       }, 1000)
     }
     return () => {
@@ -443,9 +489,27 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     setTimerState((prev) => ({ ...prev, subject }))
   }, [])
 
+  const setTimerMode = useCallback((mode: 'stopwatch' | 'timer') => {
+    setTimerState((prev) => ({
+      ...prev,
+      mode,
+      seconds: 0,
+      isRunning: false,
+    }))
+  }, [])
+
+  const setTimerTargetDuration = useCallback((targetDuration: number) => {
+    setTimerState((prev) => ({
+      ...prev,
+      targetDuration,
+      seconds: 0,
+      isRunning: false,
+    }))
+  }, [])
+
   const stopAndLogTimer = useCallback(async (notes?: string) => {
     const duration = timerState.seconds
-    const subject = timerState.subject
+    const subject = timerState.subject || 'General Study'
     setTimerState((prev) => ({ ...prev, isRunning: false, seconds: 0 }))
     if (duration > 0) {
       await handleAddSession({
@@ -464,6 +528,8 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
         profile,
         sessions,
         notes,
+        customSubjects,
+        addCustomSubject,
         isOfflineMode,
         prefilledDuration,
         setPrefilledDuration,
@@ -479,6 +545,8 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
         pauseTimer,
         resetTimer,
         setTimerSubject,
+        setTimerMode,
+        setTimerTargetDuration,
         stopAndLogTimer,
       }}
     >

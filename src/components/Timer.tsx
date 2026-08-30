@@ -1,17 +1,26 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useDashboard } from '@/context/DashboardContext'
-import { Play, Pause, Square, RotateCcw, Flame, Check } from 'lucide-react'
+import {
+  Play,
+  Pause,
+  Square,
+  RotateCcw,
+  Flame,
+  Check,
+  Plus,
+  X,
+  Timer as TimerIcon,
+  Watch
+} from 'lucide-react'
 
-const COMMON_SUBJECTS = [
-  'Mathematics',
-  'Computer Science',
-  'Physics',
-  'Chemistry',
-  'Biology',
-  'Literature',
-  'General Study',
+const PRESET_DURATIONS = [
+  { label: '15m', seconds: 15 * 60 },
+  { label: '25m', seconds: 25 * 60 },
+  { label: '45m', seconds: 45 * 60 },
+  { label: '60m', seconds: 60 * 60 },
+  { label: '90m', seconds: 90 * 60 },
 ]
 
 export default function Timer() {
@@ -21,23 +30,62 @@ export default function Timer() {
     pauseTimer,
     resetTimer,
     setTimerSubject,
+    setTimerMode,
+    setTimerTargetDuration,
     stopAndLogTimer,
+    sessions,
+    customSubjects,
+    addCustomSubject,
   } = useDashboard()
 
-  const [customSubject, setCustomSubject] = useState('')
-  const [isCustomMode, setIsCustomMode] = useState(false)
+  const [isAddingSubject, setIsAddingSubject] = useState(false)
+  const [newSubjectInput, setNewSubjectInput] = useState('')
   const [notification, setNotification] = useState<string | null>(null)
 
   const seconds = timerState.seconds
   const isRunning = timerState.isRunning
   const subject = timerState.subject
+  const mode = timerState.mode || 'timer'
+  const targetDuration = timerState.targetDuration || 1500
 
-  // Circular progress configuration (larger, full-screen ready)
+  // ── 1. User Created Subjects (No Hardcoded Placeholders) ──
+  const allUserSubjects = useMemo(() => {
+    const set = new Set<string>()
+    customSubjects.forEach((s) => s && s.trim() && set.add(s.trim()))
+    sessions.forEach((s) => s.subject && s.subject.trim() && set.add(s.subject.trim()))
+    return Array.from(set)
+  }, [customSubjects, sessions])
+
+  // Active subject fallback
+  const activeSubject = subject || (allUserSubjects.length > 0 ? allUserSubjects[0] : '')
+
+  const handleCreateSubject = () => {
+    const trimmed = newSubjectInput.trim()
+    if (!trimmed) return
+    addCustomSubject(trimmed)
+    setTimerSubject(trimmed)
+    setNewSubjectInput('')
+    setIsAddingSubject(false)
+  }
+
+  // ── 2. Time Calculations ──
+  // For Timer Mode: Countdown
+  const remainingSeconds = Math.max(0, targetDuration - seconds)
+  const isTimerFinished = mode === 'timer' && seconds >= targetDuration && targetDuration > 0
+
+  // Circular progress configuration
   const radius = 110
   const strokeWidth = 10
   const circumference = 2 * Math.PI * radius // ~691.15
-  const targetSeconds = 3600 // Circular bar wraps at 60 mins
-  const progress = Math.min(seconds / targetSeconds, 1)
+
+  // Progress fraction (0 to 1)
+  let progress = 0
+  if (mode === 'timer') {
+    progress = targetDuration > 0 ? Math.min(seconds / targetDuration, 1) : 0
+  } else {
+    // Stopwatch: wraps every 60 mins
+    progress = (seconds % 3600) / 3600
+  }
   const strokeDashoffset = circumference - progress * circumference
 
   // Clear notification timer
@@ -48,117 +96,226 @@ export default function Timer() {
     }
   }, [notification])
 
+  // Play subtle chime when countdown finishes
+  useEffect(() => {
+    if (isTimerFinished && isRunning) {
+      pauseTimer()
+      setNotification(`🎉 Focus target completed for ${activeSubject || 'Session'}!`)
+      try {
+        const audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+        const osc = audioCtx.createOscillator()
+        const gain = audioCtx.createGain()
+        osc.type = 'sine'
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime) // D5
+        osc.frequency.setValueAtTime(880.00, audioCtx.currentTime + 0.15) // A5
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime)
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5)
+        osc.connect(gain)
+        gain.connect(audioCtx.destination)
+        osc.start()
+        osc.stop(audioCtx.currentTime + 0.5)
+      } catch {
+        // audio context not allowed without prior gesture
+      }
+    }
+  }, [isTimerFinished, isRunning, pauseTimer, activeSubject])
+
   const toggleStart = () => {
     if (isRunning) {
       pauseTimer()
     } else {
-      const activeSubj = isCustomMode ? customSubject.trim() || 'General Study' : subject
-      startTimer(activeSubj)
+      startTimer(activeSubject || 'General Study')
     }
   }
 
   const handleStopAndLog = async () => {
     const finalSeconds = seconds
-    const activeSubject = isCustomMode ? customSubject.trim() || 'General Study' : subject
+    const targetSubj = activeSubject || 'General Study'
 
     if (finalSeconds <= 0) return
 
     try {
-      await stopAndLogTimer('Live focus session')
+      await stopAndLogTimer(mode === 'timer' ? 'Target focus session' : 'Live stopwatch session')
       const mins = Math.floor(finalSeconds / 60)
       const secs = finalSeconds % 60
       const formattedDuration = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`
-      setNotification(`Logged focus session: ${activeSubject} (${formattedDuration}) successfully!`)
+      setNotification(`Logged focus session: ${targetSubj} (${formattedDuration}) successfully!`)
     } catch (err) {
       console.error('Failed to auto log timer session', err)
     }
   }
 
-  const formatTime = (totalSecs: number) => {
+  const formatDisplayTime = (totalSecs: number) => {
     const hrs = Math.floor(totalSecs / 3600)
     const mins = Math.floor((totalSecs % 3600) / 60)
     const secs = totalSecs % 60
-
     const pad = (num: number) => String(num).padStart(2, '0')
-    return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`
+    if (hrs > 0) return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`
+    return `${pad(mins)}:${pad(secs)}`
   }
 
   return (
-    <div className="bg-[#FDFCFB] dark:bg-white/5 p-8 rounded-2xl border border-warmborder dark:border-white/10 shadow-sm transition-all duration-300 flex flex-col items-center w-full min-h-[460px] justify-center relative">
+    <div className="bg-[#0f111a] border border-white/[0.08] p-6 sm:p-8 rounded-2xl shadow-sm transition-all duration-300 flex flex-col items-center w-full min-h-[520px] justify-between relative overflow-hidden">
       
       {/* Floating Success Notification */}
       {notification && (
-        <div className="absolute top-4 left-4 right-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-400 p-3 rounded-xl text-xs flex items-center gap-2 animate-fade-in z-10 shadow-xs">
+        <div className="absolute top-4 left-4 right-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-xl text-xs flex items-center gap-2 animate-fade-in z-20 shadow-md">
           <Check className="h-4 w-4 shrink-0" />
           <span className="font-semibold">{notification}</span>
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-center gap-2 self-start mb-6">
-        <Flame className={`h-5 w-5 ${isRunning ? 'text-amber-500 animate-pulse' : 'text-warmtext/40 dark:text-darktext/40'}`} />
-        <span className="text-xs font-bold uppercase tracking-wider text-warmtext/50 dark:text-darktext/50">Live Focus Clock</span>
-      </div>
-
-      {/* Subject Selection Area */}
-      <div className="w-full max-w-md space-y-3 mb-6">
-        <label className="block text-[10px] font-bold uppercase tracking-widest text-warmtext/50 dark:text-darktext/50 text-center">
-          What subject are you studying?
-        </label>
-
-        {/* Quick select chips */}
-        <div className="flex flex-wrap justify-center gap-1.5">
-          {COMMON_SUBJECTS.map((sub) => {
-            const isSelected = !isCustomMode && subject === sub
-            return (
-              <button
-                key={sub}
-                type="button"
-                onClick={() => {
-                  setIsCustomMode(false)
-                  setTimerSubject(sub)
-                }}
-                className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg border transition-all duration-200 ${
-                  isSelected
-                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
-                    : 'bg-warmbg dark:bg-white/5 border-warmborder dark:border-white/10 text-warmtext/60 dark:text-darktext/50 hover:border-warmborder/80 dark:hover:border-white/20'
-                }`}
-              >
-                {sub}
-              </button>
-            )
-          })}
-          <button
-            type="button"
-            onClick={() => setIsCustomMode(true)}
-            className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg border transition-all duration-200 ${
-              isCustomMode
-                ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
-                : 'bg-warmbg dark:bg-white/5 border-warmborder dark:border-white/10 text-warmtext/60 dark:text-darktext/50 hover:border-warmborder/80 dark:hover:border-white/20'
-            }`}
-          >
-            Custom...
-          </button>
+      {/* ── 1. TOP BAR: MODE SWITCH (Timer vs Stopwatch) ── */}
+      <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-white/[0.06] pb-4">
+        <div className="flex items-center gap-2">
+          <Flame className={`h-5 w-5 ${isRunning ? 'text-purple-400 animate-pulse' : 'text-zinc-500'}`} />
+          <span className="text-sm font-bold text-white font-display">Live Focus Clock</span>
         </div>
 
-        {/* Custom Subject Input field */}
-        {isCustomMode && (
-          <input
-            type="text"
-            placeholder="Enter custom subject name..."
-            value={customSubject}
-            onChange={(e) => setCustomSubject(e.target.value)}
-            className="w-full px-3.5 py-1.5 border border-warmborder dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-warmbg dark:bg-white/5 text-warmtext dark:text-darktext text-xs text-center transition-all duration-300"
-          />
+        {/* Sleek Mode Toggle Pills */}
+        <div className="flex items-center p-1 rounded-xl bg-white/[0.04] border border-white/[0.08]">
+          <button
+            type="button"
+            onClick={() => setTimerMode('timer')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              mode === 'timer'
+                ? 'bg-purple-600 text-white shadow-sm shadow-purple-600/30'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <TimerIcon className="h-3.5 w-3.5" />
+            <span>Timer (Countdown)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setTimerMode('stopwatch')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              mode === 'stopwatch'
+                ? 'bg-purple-600 text-white shadow-sm shadow-purple-600/30'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Watch className="h-3.5 w-3.5" />
+            <span>Stopwatch (Count Up)</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── 2. SUBJECT SELECTION AREA (User Created Subjects & Custom Creator) ── */}
+      <div className="w-full max-w-lg space-y-2.5 my-3">
+        <div className="flex items-center justify-between">
+          <label className="block text-xs font-semibold text-zinc-400">
+            What subject are you studying?
+          </label>
+          {!isAddingSubject && (
+            <button
+              type="button"
+              onClick={() => setIsAddingSubject(true)}
+              className="text-xs text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1 transition-colors"
+            >
+              <Plus className="h-3 w-3" />
+              <span>Add Custom Subject</span>
+            </button>
+          )}
+        </div>
+
+        {/* Inline Custom Subject Creator */}
+        {isAddingSubject ? (
+          <div className="flex items-center gap-2 p-1.5 rounded-xl bg-[#161a26] border border-purple-500/40 animate-in fade-in duration-200">
+            <input
+              type="text"
+              placeholder="e.g. Quantum Computing, Biochemistry..."
+              value={newSubjectInput}
+              onChange={(e) => setNewSubjectInput(e.target.value)}
+              autoFocus
+              onKeyDown={(e) => e.key === 'Enter' && handleCreateSubject()}
+              className="flex-1 px-3 py-1 bg-transparent text-xs text-white placeholder:text-zinc-500 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={handleCreateSubject}
+              className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold transition-colors"
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsAddingSubject(false)
+                setNewSubjectInput('')
+              }}
+              className="p-1 text-zinc-400 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        ) : allUserSubjects.length > 0 ? (
+          /* Chips of user's real subjects */
+          <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+            {allUserSubjects.map((sub) => {
+              const isSelected = activeSubject === sub
+              return (
+                <button
+                  key={sub}
+                  type="button"
+                  onClick={() => setTimerSubject(sub)}
+                  className={`text-xs font-medium px-3 py-1 rounded-lg border transition-all duration-200 ${
+                    isSelected
+                      ? 'bg-purple-600/30 border-purple-500 text-purple-200 shadow-xs'
+                      : 'bg-white/[0.03] border-white/[0.08] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]'
+                  }`}
+                >
+                  {sub}
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+          /* Empty prompt for new user */
+          <div className="p-3 rounded-xl bg-white/[0.02] border border-dashed border-white/10 text-center space-y-2">
+            <p className="text-xs text-zinc-400">No subjects created yet.</p>
+            <button
+              type="button"
+              onClick={() => setIsAddingSubject(true)}
+              className="px-3 py-1 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-300 rounded-lg text-xs font-semibold inline-flex items-center gap-1"
+            >
+              <Plus className="h-3 w-3" />
+              <span>Type your first subject name</span>
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Prominent Circular Progress Ring */}
-      <div className="relative my-4 flex items-center justify-center scale-110 sm:scale-120 transition-transform duration-300">
-        <svg className="w-72 h-72 transform -rotate-90" width="280" height="280">
-          {/* Background circle */}
+      {/* ── 3. PRESETS BAR (Only in Countdown Timer mode) ── */}
+      {mode === 'timer' && (
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-2">
+          <span className="text-[11px] font-semibold text-zinc-500 mr-1">Target:</span>
+          {PRESET_DURATIONS.map((preset) => {
+            const isSelected = targetDuration === preset.seconds
+            return (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => setTimerTargetDuration(preset.seconds)}
+                className={`text-xs font-medium px-2.5 py-1 rounded-lg border transition-all ${
+                  isSelected
+                    ? 'bg-indigo-600/40 border-indigo-500 text-indigo-200 shadow-xs'
+                    : 'bg-white/[0.03] border-white/[0.08] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]'
+                }`}
+              >
+                {preset.label}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* ── 4. CIRCULAR CLOCK DIAL ── */}
+      <div className="relative my-3 flex items-center justify-center scale-105 sm:scale-115 transition-transform duration-300">
+        <svg className="w-64 h-64 sm:w-72 sm:h-72 transform -rotate-90" width="280" height="280">
+          {/* Background circle track */}
           <circle
-            className="text-warmborder/40 dark:text-white/10 transition-colors duration-300"
+            className="text-white/10"
             stroke="currentColor"
             strokeWidth={strokeWidth}
             fill="transparent"
@@ -166,10 +323,9 @@ export default function Timer() {
             cx="140"
             cy="140"
           />
-          {/* Foreground progress circle */}
+          {/* Foreground glowing progress circle */}
           <circle
-            className="text-indigo-600 dark:text-indigo-500 transition-all duration-300 ease-in-out"
-            stroke="currentColor"
+            stroke={isTimerFinished ? '#10b981' : '#a855f7'}
             strokeWidth={strokeWidth}
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
@@ -178,59 +334,105 @@ export default function Timer() {
             r={radius}
             cx="140"
             cy="140"
+            style={{
+              filter: isRunning
+                ? 'drop-shadow(0 0 12px rgba(168, 85, 247, 0.7))'
+                : 'none',
+              transition: 'stroke-dashoffset 0.8s ease-in-out',
+            }}
           />
         </svg>
 
-        {/* Floating Text inside Circle */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-          <span className={`font-mono text-4xl font-black tracking-tight tabular-nums select-none ${isRunning ? 'text-indigo-600 dark:text-indigo-400' : 'text-warmtext dark:text-darktext'}`}>
-            {formatTime(seconds)}
+        {/* Center Clock Readout */}
+        <div className="absolute flex flex-col items-center justify-center text-center space-y-1">
+          <span className="font-mono text-3xl sm:text-4xl font-extrabold tracking-tight text-white drop-shadow-sm">
+            {mode === 'timer' ? formatDisplayTime(remainingSeconds) : formatDisplayTime(seconds)}
           </span>
-          <span className="text-[10px] font-bold text-warmtext/40 dark:text-darktext/40 uppercase tracking-widest mt-1">
-            {isRunning ? 'Focusing' : 'Ready'}
+
+          <span className="text-[11px] font-semibold text-zinc-400">
+            {activeSubject || 'Select Subject'}
           </span>
+
+          <div className="flex items-center gap-1.5 pt-0.5">
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isRunning
+                  ? 'bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400'
+                  : isTimerFinished
+                  ? 'bg-emerald-400'
+                  : 'bg-amber-500'
+              }`}
+            />
+            <span
+              className={`text-[10px] font-bold uppercase tracking-wider ${
+                isRunning
+                  ? 'text-emerald-400'
+                  : isTimerFinished
+                  ? 'text-emerald-400'
+                  : 'text-amber-400'
+              }`}
+            >
+              {isTimerFinished
+                ? 'Target Complete'
+                : isRunning
+                ? (mode === 'timer' ? 'Counting Down' : 'Stopwatch Running')
+                : (seconds > 0 ? 'Paused' : 'Ready')}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Circular control buttons */}
-      <div className="flex items-center justify-center gap-5 w-full mt-10">
-        {/* Reset button */}
+      {/* ── 5. ACTION CONTROLS ── */}
+      <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-md mt-4">
+        {/* Play / Pause Primary Button */}
         <button
-          onClick={resetTimer}
-          disabled={seconds === 0}
-          className="p-3.5 rounded-full border border-warmborder dark:border-white/10 bg-[#FDFCFB] dark:bg-white/5 hover:bg-warmbg dark:hover:bg-white/10 text-warmtext/50 dark:text-darktext/50 hover:text-warmtext dark:hover:text-darktext transition-all duration-300 disabled:opacity-30 disabled:pointer-events-none hover:scale-105"
-          title="Reset Stopwatch"
-        >
-          <RotateCcw className="h-5 w-5" />
-        </button>
-
-        {/* Play/Pause button */}
-        <button
+          type="button"
           onClick={toggleStart}
-          className={`p-5 rounded-full text-white flex items-center justify-center transition-all duration-300 shadow-md hover:scale-115 active:scale-95 ${
+          className={`flex-1 w-full py-3 px-6 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98] ${
             isRunning
-              ? 'bg-warmtext dark:bg-white/10 hover:bg-warmtext/90 dark:hover:bg-white/20'
-              : 'bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600'
+              ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20'
+              : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500 hover:opacity-95 text-white shadow-purple-500/25'
           }`}
-          title={isRunning ? 'Pause Focus' : 'Start Focus'}
         >
           {isRunning ? (
-            <Pause className="h-6.5 w-6.5 fill-white dark:fill-darktext" />
+            <>
+              <Pause className="h-4 w-4 fill-white" />
+              <span>Pause Focus</span>
+            </>
           ) : (
-            <Play className="h-6.5 w-6.5 fill-white translate-x-0.5" />
+            <>
+              <Play className="h-4 w-4 fill-white" />
+              <span>{seconds > 0 ? 'Resume Focus' : 'Start Focus Session'}</span>
+            </>
           )}
         </button>
 
-        {/* Stop and Log button - automatically saves to db */}
-        <button
-          onClick={handleStopAndLog}
-          disabled={seconds === 0}
-          className="p-3.5 rounded-full bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-600 text-white flex items-center justify-center transition-all duration-300 shadow-md disabled:opacity-30 disabled:pointer-events-none hover:scale-105"
-          title="Stop & Auto Log Focus"
-        >
-          <Square className="h-5 w-5 fill-white" />
-        </button>
+        {/* Reset & Finish Buttons */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {seconds > 0 && (
+            <button
+              type="button"
+              onClick={resetTimer}
+              className="p-3 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-zinc-400 hover:text-white rounded-xl transition-colors duration-200"
+              title="Reset Timer"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleStopAndLog}
+            disabled={seconds <= 0}
+            className="flex-1 sm:flex-initial py-3 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded-xl font-semibold text-xs transition-all duration-200 shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5"
+            title="Log elapsed time to database"
+          >
+            <Square className="h-3.5 w-3.5 fill-white" />
+            <span>Finish & Save</span>
+          </button>
+        </div>
       </div>
+
     </div>
   )
 }
