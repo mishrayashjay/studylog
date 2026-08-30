@@ -43,6 +43,7 @@ export default function ThemeToggle({ className }: ThemeToggleProps = {}) {
     const root = window.document.documentElement
     allThemes.forEach((t) => root.classList.remove(t))
     root.classList.add(nextTheme)
+    root.setAttribute('data-theme', nextTheme)
 
     if (darkThemes.includes(nextTheme)) {
       root.classList.add('dark')

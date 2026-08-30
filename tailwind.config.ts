@@ -16,6 +16,18 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        theme: {
+          bg: "var(--theme-bg)",
+          card: "var(--theme-card)",
+          subtle: "var(--theme-card-subtle)",
+          sidebar: "var(--theme-sidebar)",
+          text: "var(--theme-text)",
+          muted: "var(--theme-text-muted)",
+          border: "var(--theme-border)",
+          accent: "var(--theme-accent)",
+          accentbg: "var(--theme-accent-bg)",
+          header: "var(--theme-header-bg)",
+        },
         warmbg: "var(--theme-bg)",
         warmtext: "var(--theme-text)",
         warmborder: "var(--theme-border)",

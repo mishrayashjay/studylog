@@ -155,7 +155,7 @@ export default function Timer() {
   }
 
   return (
-    <div className="bg-[#0f111a] border border-white/[0.08] p-6 sm:p-8 rounded-2xl shadow-sm transition-all duration-300 flex flex-col items-center w-full min-h-[520px] justify-between relative overflow-hidden">
+    <div className="bg-theme-card border border-theme-border p-6 sm:p-8 rounded-2xl shadow-sm transition-all duration-200 flex flex-col items-center w-full min-h-[520px] justify-between relative overflow-hidden">
       
       {/* Floating Success Notification */}
       {notification && (
@@ -166,21 +166,21 @@ export default function Timer() {
       )}
 
       {/* ── 1. TOP BAR: MODE SWITCH (Timer vs Stopwatch) ── */}
-      <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-white/[0.06] pb-4">
+      <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-theme-border pb-4">
         <div className="flex items-center gap-2">
-          <Flame className={`h-5 w-5 ${isRunning ? 'text-purple-400 animate-pulse' : 'text-zinc-500'}`} />
-          <span className="text-sm font-bold text-white font-display">Live Focus Clock</span>
+          <Flame className={`h-5 w-5 ${isRunning ? 'text-purple-400 animate-pulse' : 'text-theme-muted'}`} />
+          <span className="text-sm font-bold text-theme-text font-display">Live Focus Clock</span>
         </div>
 
         {/* Sleek Mode Toggle Pills */}
-        <div className="flex items-center p-1 rounded-xl bg-white/[0.04] border border-white/[0.08]">
+        <div className="flex items-center p-1 rounded-xl bg-theme-subtle border border-theme-border">
           <button
             type="button"
             onClick={() => setTimerMode('timer')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               mode === 'timer'
                 ? 'bg-purple-600 text-white shadow-sm shadow-purple-600/30'
-                : 'text-zinc-400 hover:text-white'
+                : 'text-theme-muted hover:text-theme-text'
             }`}
           >
             <TimerIcon className="h-3.5 w-3.5" />
@@ -192,7 +192,7 @@ export default function Timer() {
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               mode === 'stopwatch'
                 ? 'bg-purple-600 text-white shadow-sm shadow-purple-600/30'
-                : 'text-zinc-400 hover:text-white'
+                : 'text-theme-muted hover:text-theme-text'
             }`}
           >
             <Watch className="h-3.5 w-3.5" />
@@ -204,7 +204,7 @@ export default function Timer() {
       {/* ── 2. SUBJECT SELECTION AREA (User Created Subjects & Custom Creator) ── */}
       <div className="w-full max-w-lg space-y-2.5 my-3">
         <div className="flex items-center justify-between">
-          <label className="block text-xs font-semibold text-zinc-400">
+          <label className="block text-xs font-semibold text-theme-muted">
             What subject are you studying?
           </label>
           {!isAddingSubject && (
@@ -221,7 +221,7 @@ export default function Timer() {
 
         {/* Inline Custom Subject Creator */}
         {isAddingSubject ? (
-          <div className="flex items-center gap-2 p-1.5 rounded-xl bg-[#161a26] border border-purple-500/40 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2 p-1.5 rounded-xl bg-theme-subtle border border-purple-500/40 animate-in fade-in duration-200">
             <input
               type="text"
               placeholder="e.g. Quantum Computing, Biochemistry..."
@@ -229,7 +229,7 @@ export default function Timer() {
               onChange={(e) => setNewSubjectInput(e.target.value)}
               autoFocus
               onKeyDown={(e) => e.key === 'Enter' && handleCreateSubject()}
-              className="flex-1 px-3 py-1 bg-transparent text-xs text-white placeholder:text-zinc-500 focus:outline-none"
+              className="flex-1 px-3 py-1 bg-transparent text-xs text-theme-text placeholder:text-theme-muted focus:outline-none"
             />
             <button
               type="button"
@@ -244,7 +244,7 @@ export default function Timer() {
                 setIsAddingSubject(false)
                 setNewSubjectInput('')
               }}
-              className="p-1 text-zinc-400 hover:text-white"
+              className="p-1 text-theme-muted hover:text-theme-text"
             >
               <X className="h-4 w-4" />
             </button>
@@ -261,8 +261,8 @@ export default function Timer() {
                   onClick={() => setTimerSubject(sub)}
                   className={`text-xs font-medium px-3 py-1 rounded-lg border transition-all duration-200 ${
                     isSelected
-                      ? 'bg-purple-600/30 border-purple-500 text-purple-200 shadow-xs'
-                      : 'bg-white/[0.03] border-white/[0.08] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]'
+                      ? 'bg-purple-600/30 border-purple-500 text-purple-300 shadow-xs'
+                      : 'bg-theme-subtle border-theme-border text-theme-muted hover:text-theme-text'
                   }`}
                 >
                   {sub}
@@ -272,8 +272,8 @@ export default function Timer() {
           </div>
         ) : (
           /* Empty prompt for new user */
-          <div className="p-3 rounded-xl bg-white/[0.02] border border-dashed border-white/10 text-center space-y-2">
-            <p className="text-xs text-zinc-400">No subjects created yet.</p>
+          <div className="p-3 rounded-xl bg-theme-subtle border border-dashed border-theme-border text-center space-y-2">
+            <p className="text-xs text-theme-muted">No subjects created yet.</p>
             <button
               type="button"
               onClick={() => setIsAddingSubject(true)}
@@ -289,7 +289,7 @@ export default function Timer() {
       {/* ── 3. PRESETS BAR (Only in Countdown Timer mode) ── */}
       {mode === 'timer' && (
         <div className="flex flex-wrap items-center justify-center gap-2 mb-2">
-          <span className="text-[11px] font-semibold text-zinc-500 mr-1">Target:</span>
+          <span className="text-[11px] font-semibold text-theme-muted mr-1">Target:</span>
           {PRESET_DURATIONS.map((preset) => {
             const isSelected = targetDuration === preset.seconds
             return (
@@ -299,8 +299,8 @@ export default function Timer() {
                 onClick={() => setTimerTargetDuration(preset.seconds)}
                 className={`text-xs font-medium px-2.5 py-1 rounded-lg border transition-all ${
                   isSelected
-                    ? 'bg-indigo-600/40 border-indigo-500 text-indigo-200 shadow-xs'
-                    : 'bg-white/[0.03] border-white/[0.08] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]'
+                    ? 'bg-indigo-600/30 border-indigo-500 text-indigo-300 shadow-xs'
+                    : 'bg-theme-subtle border-theme-border text-theme-muted hover:text-theme-text'
                 }`}
               >
                 {preset.label}
@@ -315,8 +315,7 @@ export default function Timer() {
         <svg className="w-64 h-64 sm:w-72 sm:h-72 transform -rotate-90" width="280" height="280">
           {/* Background circle track */}
           <circle
-            className="text-white/10"
-            stroke="currentColor"
+            stroke="var(--theme-border)"
             strokeWidth={strokeWidth}
             fill="transparent"
             r={radius}
@@ -345,11 +344,11 @@ export default function Timer() {
 
         {/* Center Clock Readout */}
         <div className="absolute flex flex-col items-center justify-center text-center space-y-1">
-          <span className="font-mono text-3xl sm:text-4xl font-extrabold tracking-tight text-white drop-shadow-sm">
+          <span className="font-mono text-3xl sm:text-4xl font-extrabold tracking-tight text-theme-text drop-shadow-sm">
             {mode === 'timer' ? formatDisplayTime(remainingSeconds) : formatDisplayTime(seconds)}
           </span>
 
-          <span className="text-[11px] font-semibold text-zinc-400">
+          <span className="text-[11px] font-semibold text-theme-muted">
             {activeSubject || 'Select Subject'}
           </span>
 
@@ -413,7 +412,7 @@ export default function Timer() {
             <button
               type="button"
               onClick={resetTimer}
-              className="p-3 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-zinc-400 hover:text-white rounded-xl transition-colors duration-200"
+              className="p-3 bg-theme-subtle hover:bg-theme-border border border-theme-border text-theme-muted hover:text-theme-text rounded-xl transition-colors duration-200"
               title="Reset Timer"
             >
               <RotateCcw className="h-4 w-4" />

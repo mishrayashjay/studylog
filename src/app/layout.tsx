@@ -32,7 +32,7 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  var theme = localStorage.getItem('theme') || 'theme-light';
+                  var theme = localStorage.getItem('theme') || 'theme-oled';
                   var darkThemes = ['theme-dark', 'theme-oled', 'theme-midnight'];
                   var themes = ['theme-light', 'theme-sepia', 'theme-dark', 'theme-oled', 'theme-midnight'];
                   
@@ -44,6 +44,7 @@ export default function RootLayout({
                   });
                   
                   document.documentElement.classList.add(theme);
+                  document.documentElement.setAttribute('data-theme', theme);
                   
                   if (darkThemes.indexOf(theme) > -1) {
                     document.documentElement.classList.add('dark');
@@ -56,7 +57,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased font-sans bg-warmbg dark:bg-darkbg text-warmtext dark:text-darktext">
+      <body className="antialiased font-sans bg-theme-bg text-theme-text transition-colors duration-200">
         {children}
       </body>
     </html>

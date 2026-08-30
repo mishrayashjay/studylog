@@ -2,39 +2,96 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═════════════════════════════════════════════════════════════════
+   THEME COLOR DEFINITIONS (5 Distinct Themes)
+   ═════════════════════════════════════════════════════════════════ */
+
 :root {
+  /* Default: Light Cream */
   --theme-bg: #FAF7F2;
-  --theme-text: #2A2622;
-  --theme-border: #E6DFD5;
+  --theme-card: #FFFFFF;
+  --theme-card-subtle: #F3EFEA;
+  --theme-sidebar: #F5EFE6;
+  --theme-text: #1F1C18;
+  --theme-text-muted: #6E665D;
+  --theme-border: #E5DCD0;
+  --theme-accent: #7C3AED;
+  --theme-accent-bg: rgba(124, 58, 237, 0.1);
+  --theme-header-bg: #F0EAE1;
 }
 
-/* Custom Theme Variants */
-.theme-light {
+/* 1. Light Cream */
+.theme-light, [data-theme="theme-light"] {
   --theme-bg: #FAF7F2;
-  --theme-text: #2A2622;
-  --theme-border: #E6DFD5;
+  --theme-card: #FFFFFF;
+  --theme-card-subtle: #F3EFEA;
+  --theme-sidebar: #F5EFE6;
+  --theme-text: #1F1C18;
+  --theme-text-muted: #6E665D;
+  --theme-border: #E5DCD0;
+  --theme-accent: #7C3AED;
+  --theme-accent-bg: rgba(124, 58, 237, 0.1);
+  --theme-header-bg: #F0EAE1;
 }
 
-.theme-sepia {
+/* 2. Sepia Paper */
+.theme-sepia, [data-theme="theme-sepia"] {
   --theme-bg: #F4ECD8;
-  --theme-text: #433422;
-  --theme-border: #E4D5B7;
+  --theme-card: #FAF5E8;
+  --theme-card-subtle: #ECE1C7;
+  --theme-sidebar: #E8DEC5;
+  --theme-text: #3E2E1E;
+  --theme-text-muted: #7A664E;
+  --theme-border: #DFCEAF;
+  --theme-accent: #C2410C;
+  --theme-accent-bg: rgba(194, 65, 12, 0.12);
+  --theme-header-bg: #E4D7BB;
 }
 
-.theme-dark {
-  --theme-bg: #1C1A18;
-  --theme-text: #F0EBE3;
-  --theme-border: rgba(240, 235, 227, 0.1);
+/* 3. Warm Charcoal (Espresso Dark) */
+.theme-dark, [data-theme="theme-dark"] {
+  --theme-bg: #181614;
+  --theme-card: #23201C;
+  --theme-card-subtle: #2E2924;
+  --theme-sidebar: #13110F;
+  --theme-text: #F2EDE4;
+  --theme-text-muted: #9E9589;
+  --theme-border: rgba(242, 237, 228, 0.12);
+  --theme-accent: #A78BFA;
+  --theme-accent-bg: rgba(167, 139, 250, 0.15);
+  --theme-header-bg: #1A1715;
 }
 
-.theme-oled {
+/* 4. Pitch Black (OLED Pure Black) */
+.theme-oled, [data-theme="theme-oled"] {
   --theme-bg: #000000;
+  --theme-card: #0D0E12;
+  --theme-card-subtle: #161822;
+  --theme-sidebar: #06070A;
   --theme-text: #F3F4F6;
-  --theme-border: rgba(243, 244, 246, 0.1);
+  --theme-text-muted: #9CA3AF;
+  --theme-border: rgba(255, 255, 255, 0.08);
+  --theme-accent: #8B5CF6;
+  --theme-accent-bg: rgba(139, 92, 246, 0.15);
+  --theme-header-bg: #0A0C10;
 }
 
-.theme-midnight {
-  --theme-bg: #0A0D1A;
-  --theme-text: #E0E6ED;
-  --theme-border: rgba(224, 230, 237, 0.1);
+/* 5. Midnight Blue (Cosmic Deep Navy) */
+.theme-midnight, [data-theme="theme-midnight"] {
+  --theme-bg: #080C1A;
+  --theme-card: #0F172E;
+  --theme-card-subtle: #182346;
+  --theme-sidebar: #050814;
+  --theme-text: #E2E8F0;
+  --theme-text-muted: #8899B5;
+  --theme-border: rgba(148, 163, 184, 0.14);
+  --theme-accent: #6366F1;
+  --theme-accent-bg: rgba(99, 102, 241, 0.16);
+  --theme-header-bg: #0B1124;
+}
+
+body {
+  background-color: var(--theme-bg);
+  color: var(--theme-text);
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }

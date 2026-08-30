@@ -112,17 +112,19 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
   }
 
   return (
-    <div className="bg-[#0f111a] border border-white/[0.08] p-6 rounded-2xl shadow-sm space-y-6">
-      <div className="flex items-center gap-2">
+    <div className="bg-theme-card border border-theme-border p-6 rounded-2xl shadow-sm space-y-6">
+      <div className="flex items-center gap-2 border-b border-theme-border pb-4">
         <BookOpen className="h-4.5 w-4.5 text-purple-400" />
-        <h2 className="text-sm font-bold text-white font-display">Log Study Session</h2>
+        <h3 className="text-base font-bold text-theme-text font-display">
+          Log Study Session
+        </h3>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* ── 1. SUBJECT SELECTION & CUSTOM CREATOR ── */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="block text-xs font-semibold text-zinc-400">
+            <label className="block text-xs font-semibold text-theme-muted">
               Subject Name
             </label>
             {!isAddingSubject && (
@@ -144,12 +146,12 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
             placeholder={allUserSubjects.length > 0 ? allUserSubjects[0] : "e.g. Linear Algebra, React Hooks..."}
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="w-full px-3.5 py-2.5 bg-[#161a26] border border-white/10 rounded-xl focus:outline-none focus:border-purple-500 text-sm text-white placeholder:text-zinc-500 transition-colors"
+            className="w-full px-3.5 py-2.5 bg-theme-subtle border border-theme-border rounded-xl focus:outline-none focus:border-purple-500 text-sm text-theme-text placeholder:text-theme-muted transition-colors"
           />
 
           {/* Inline Custom Subject Creator */}
           {isAddingSubject ? (
-            <div className="flex items-center gap-2 p-1.5 rounded-xl bg-[#161a26] border border-purple-500/40 animate-in fade-in duration-200">
+            <div className="flex items-center gap-2 p-1.5 rounded-xl bg-theme-subtle border border-purple-500/40 animate-in fade-in duration-200">
               <input
                 type="text"
                 placeholder="Type new subject..."
@@ -157,7 +159,7 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
                 onChange={(e) => setNewSubjectInput(e.target.value)}
                 autoFocus
                 onKeyDown={(e) => e.key === 'Enter' && handleCreateCustomSubject()}
-                className="flex-1 px-3 py-1 bg-transparent text-xs text-white placeholder:text-zinc-500 focus:outline-none"
+                className="flex-1 px-3 py-1 bg-transparent text-xs text-theme-text placeholder:text-theme-muted focus:outline-none"
               />
               <button
                 type="button"
@@ -172,7 +174,7 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
                   setIsAddingSubject(false)
                   setNewSubjectInput('')
                 }}
-                className="p-1 text-zinc-400 hover:text-white"
+                className="p-1 text-theme-muted hover:text-theme-text"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -189,8 +191,8 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
                     onClick={() => setSubject(sub)}
                     className={`text-xs font-medium px-2.5 py-1 rounded-lg border transition-all ${
                       isSelected
-                        ? 'bg-purple-600/30 border-purple-500 text-purple-200 shadow-xs'
-                        : 'bg-white/[0.03] border-white/[0.08] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]'
+                        ? 'bg-purple-600/30 border-purple-500 text-purple-300 shadow-xs'
+                        : 'bg-theme-subtle border-theme-border text-theme-muted hover:text-theme-text'
                     }`}
                   >
                     {sub}
@@ -204,7 +206,7 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
         {/* ── 2. SEPARATE HOURS AND MINUTES DURATION INPUT ── */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="block text-xs font-semibold text-zinc-400">
+            <label className="block text-xs font-semibold text-theme-muted">
               Session Duration
             </label>
             {prefilledDuration !== null && (
@@ -213,7 +215,7 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
                 <button
                   type="button"
                   onClick={onClearPrefill}
-                  className="text-zinc-400 hover:text-zinc-200 p-0.5"
+                  className="text-theme-muted hover:text-theme-text p-0.5"
                   title="Clear prefill"
                 >
                   <X className="h-3 w-3" />
@@ -225,9 +227,9 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
           {/* Hours and Minutes Two-Column Steppers */}
           <div className="grid grid-cols-2 gap-3">
             {/* Hours Input */}
-            <div className="bg-[#161a26] border border-white/10 rounded-xl p-3 flex items-center justify-between">
+            <div className="bg-theme-subtle border border-theme-border rounded-xl p-3 flex items-center justify-between">
               <div>
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">Hours</span>
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-theme-muted">Hours</span>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <input
                     type="number"
@@ -235,23 +237,23 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
                     max="24"
                     value={hours}
                     onChange={(e) => setHours(Math.max(0, parseInt(e.target.value) || 0))}
-                    className="w-12 bg-transparent text-xl font-bold font-mono text-white focus:outline-none"
+                    className="w-12 bg-transparent text-xl font-bold font-mono text-theme-text focus:outline-none"
                   />
-                  <span className="text-xs text-zinc-400 font-medium">hrs</span>
+                  <span className="text-xs text-theme-muted font-medium">hrs</span>
                 </div>
               </div>
               <div className="flex flex-col gap-1">
                 <button
                   type="button"
                   onClick={() => setHours((h) => Math.min(24, h + 1))}
-                  className="w-6 h-6 rounded-md bg-white/[0.06] hover:bg-white/[0.12] flex items-center justify-center text-zinc-300 hover:text-white"
+                  className="w-6 h-6 rounded-md bg-theme-border hover:opacity-80 flex items-center justify-center text-theme-text"
                 >
                   <ChevronUp className="h-3.5 w-3.5" />
                 </button>
                 <button
                   type="button"
                   onClick={() => setHours((h) => Math.max(0, h - 1))}
-                  className="w-6 h-6 rounded-md bg-white/[0.06] hover:bg-white/[0.12] flex items-center justify-center text-zinc-300 hover:text-white"
+                  className="w-6 h-6 rounded-md bg-theme-border hover:opacity-80 flex items-center justify-center text-theme-text"
                 >
                   <ChevronDown className="h-3.5 w-3.5" />
                 </button>
@@ -259,9 +261,9 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
             </div>
 
             {/* Minutes Input */}
-            <div className="bg-[#161a26] border border-white/10 rounded-xl p-3 flex items-center justify-between">
+            <div className="bg-theme-subtle border border-theme-border rounded-xl p-3 flex items-center justify-between">
               <div>
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400">Minutes</span>
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-theme-muted">Minutes</span>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <input
                     type="number"
@@ -270,23 +272,23 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
                     step="5"
                     value={minutes}
                     onChange={(e) => setMinutes(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
-                    className="w-12 bg-transparent text-xl font-bold font-mono text-white focus:outline-none"
+                    className="w-12 bg-transparent text-xl font-bold font-mono text-theme-text focus:outline-none"
                   />
-                  <span className="text-xs text-zinc-400 font-medium">mins</span>
+                  <span className="text-xs text-theme-muted font-medium">mins</span>
                 </div>
               </div>
               <div className="flex flex-col gap-1">
                 <button
                   type="button"
                   onClick={() => setMinutes((m) => Math.min(59, m + 5))}
-                  className="w-6 h-6 rounded-md bg-white/[0.06] hover:bg-white/[0.12] flex items-center justify-center text-zinc-300 hover:text-white"
+                  className="w-6 h-6 rounded-md bg-theme-border hover:opacity-80 flex items-center justify-center text-theme-text"
                 >
                   <ChevronUp className="h-3.5 w-3.5" />
                 </button>
                 <button
                   type="button"
                   onClick={() => setMinutes((m) => Math.max(0, m - 5))}
-                  className="w-6 h-6 rounded-md bg-white/[0.06] hover:bg-white/[0.12] flex items-center justify-center text-zinc-300 hover:text-white"
+                  className="w-6 h-6 rounded-md bg-theme-border hover:opacity-80 flex items-center justify-center text-theme-text"
                 >
                   <ChevronDown className="h-3.5 w-3.5" />
                 </button>
@@ -308,8 +310,8 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
                   }}
                   className={`text-xs font-medium px-2.5 py-1 rounded-lg border transition-all ${
                     isSelected
-                      ? 'bg-indigo-600/40 border-indigo-500 text-indigo-200'
-                      : 'bg-white/[0.03] border-white/[0.08] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]'
+                      ? 'bg-indigo-600/30 border-indigo-500 text-indigo-300'
+                      : 'bg-theme-subtle border-theme-border text-theme-muted hover:text-theme-text'
                   }`}
                 >
                   {p.label}
@@ -319,9 +321,9 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
           </div>
 
           {/* Total Duration Display */}
-          <div className="text-right text-[11px] text-zinc-400 font-mono">
+          <div className="text-right text-[11px] text-theme-muted font-mono">
             Total:{' '}
-            <span className="text-white font-bold">
+            <span className="text-theme-text font-bold">
               {hours > 0 ? `${hours}h ` : ''}{minutes}m
             </span>{' '}
             ({Math.round(totalSeconds / 60)} mins)
@@ -330,7 +332,7 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
 
         {/* ── 3. DATE & TIME ── */}
         <div>
-          <label className="block text-xs font-semibold text-zinc-400 mb-1.5">
+          <label className="block text-xs font-semibold text-theme-muted mb-1.5">
             Date & Time
           </label>
           <div className="relative">
@@ -339,15 +341,15 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
               required
               value={timestamp}
               onChange={(e) => setTimestamp(e.target.value)}
-              className="w-full pl-10 pr-3.5 py-2.5 bg-[#161a26] border border-white/10 rounded-xl focus:outline-none focus:border-purple-500 text-sm text-white transition-colors [color-scheme:dark]"
+              className="w-full pl-10 pr-3.5 py-2.5 bg-theme-subtle border border-theme-border rounded-xl focus:outline-none focus:border-purple-500 text-sm text-theme-text transition-colors"
             />
-            <Calendar className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400 pointer-events-none" />
+            <Calendar className="absolute left-3.5 top-3 h-4 w-4 text-theme-muted pointer-events-none" />
           </div>
         </div>
 
         {/* ── 4. NOTES ── */}
         <div>
-          <label className="block text-xs font-semibold text-zinc-400 mb-1.5">
+          <label className="block text-xs font-semibold text-theme-muted mb-1.5">
             Notes & Key Takeaways (Optional)
           </label>
           <div className="relative">
@@ -356,9 +358,9 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              className="w-full pl-10 pr-3.5 py-2.5 bg-[#161a26] border border-white/10 rounded-xl focus:outline-none focus:border-purple-500 text-sm text-white placeholder:text-zinc-500 resize-none transition-colors"
+              className="w-full pl-10 pr-3.5 py-2.5 bg-theme-subtle border border-theme-border rounded-xl focus:outline-none focus:border-purple-500 text-sm text-theme-text placeholder:text-theme-muted resize-none transition-colors"
             />
-            <FileText className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400 pointer-events-none" />
+            <FileText className="absolute left-3.5 top-3 h-4 w-4 text-theme-muted pointer-events-none" />
           </div>
         </div>
 

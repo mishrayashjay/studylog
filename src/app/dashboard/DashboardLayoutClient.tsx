@@ -47,14 +47,14 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
   const initial = (displayName.charAt(0) || 'S').toUpperCase()
 
   const sidebarContent = (
-    <div className="flex flex-col justify-between h-full p-4.5 bg-[#07090e] text-white border-r border-white/[0.08] select-none">
+    <div className="flex flex-col justify-between h-full p-4.5 bg-theme-sidebar text-theme-text border-r border-theme-border select-none transition-colors duration-200">
       {/* Brand Header */}
       <div className="space-y-6">
         <Link href="/dashboard" className="flex items-center gap-3 px-2 py-1 group">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-violet-500 flex items-center justify-center text-white shadow-md shadow-purple-500/20 group-hover:opacity-95 transition-opacity">
             <BookOpen className="h-4 w-4" />
           </div>
-          <span className="font-display font-medium text-white text-lg tracking-tight">
+          <span className="font-display font-medium text-theme-text text-lg tracking-tight">
             studylog
           </span>
         </Link>
@@ -74,11 +74,11 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                   isActive
-                    ? 'bg-purple-900/40 text-purple-200 border border-purple-500/30 shadow-sm shadow-purple-950/50'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
+                    ? 'bg-purple-600/20 text-purple-400 dark:text-purple-300 border border-purple-500/40 shadow-sm'
+                    : 'text-theme-muted hover:text-theme-text hover:bg-theme-card'
                 }`}
               >
-                <link.icon className={`h-4.5 w-4.5 shrink-0 ${isActive ? 'text-purple-400' : 'text-zinc-400'}`} />
+                <link.icon className={`h-4.5 w-4.5 shrink-0 ${isActive ? 'text-purple-400' : 'text-theme-muted'}`} />
                 <span>{link.name}</span>
               </Link>
             )
@@ -87,24 +87,24 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
       </div>
 
       {/* Bottom Area: User Profile Row */}
-      <div className="pt-4 border-t border-white/[0.06]">
-        <div className="flex items-center justify-between px-2 py-1.5 rounded-xl hover:bg-white/[0.04] transition-colors cursor-pointer group">
+      <div className="pt-4 border-t border-theme-border">
+        <div className="flex items-center justify-between px-2 py-1.5 rounded-xl hover:bg-theme-card transition-colors cursor-pointer group">
           <Link href="/dashboard/settings" className="flex items-center gap-3 flex-1 min-w-0">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shadow-sm shrink-0">
               {initial}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-white truncate">{displayName}</p>
+              <p className="text-xs font-semibold text-theme-text truncate">{displayName}</p>
               <div className="flex items-center gap-1">
-                <span className="text-[10px] text-zinc-400 group-hover:text-zinc-300 transition-colors">View Profile</span>
-                <ChevronDown className="h-3 w-3 text-zinc-400 group-hover:text-zinc-200 transition-colors" />
+                <span className="text-[10px] text-theme-muted group-hover:text-theme-text transition-colors">View Profile</span>
+                <ChevronDown className="h-3 w-3 text-theme-muted group-hover:text-theme-text transition-colors" />
               </div>
             </div>
           </Link>
           <button
             onClick={handleSignOut}
             title="Sign out"
-            className="p-1 text-zinc-400 hover:text-red-400 transition-colors ml-1"
+            className="p-1 text-theme-muted hover:text-red-400 transition-colors ml-1"
           >
             <LogOut className="h-3.5 w-3.5" />
           </button>
@@ -114,19 +114,19 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
   )
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-white flex flex-col md:flex-row overflow-x-hidden font-sans">
+    <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col md:flex-row overflow-x-hidden font-sans transition-colors duration-200">
       {/* ── Mobile Top Header Bar ── */}
-      <div className="md:hidden flex items-center justify-between p-4 border-b border-white/[0.08] bg-[#07090e]/95 backdrop-blur-md sticky top-0 z-40">
+      <div className="md:hidden flex items-center justify-between p-4 border-b border-theme-border bg-theme-sidebar/95 backdrop-blur-md sticky top-0 z-40">
         <Link href="/dashboard" className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 via-purple-500 to-violet-500 flex items-center justify-center text-white shadow-sm">
             <BookOpen className="h-3.5 w-3.5" />
           </div>
-          <span className="font-display font-medium text-white text-base">studylog</span>
+          <span className="font-display font-medium text-theme-text text-base">studylog</span>
         </Link>
 
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 text-zinc-400 hover:text-white rounded-lg"
+          className="p-2 text-theme-muted hover:text-theme-text rounded-lg"
           aria-label="Toggle navigation"
         >
           {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -137,7 +137,7 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
       {isMobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-xs"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
             onClick={() => setIsMobileMenuOpen(false)}
           />
           <div className="relative w-72 h-full z-10">
@@ -152,11 +152,11 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
       </aside>
 
       {/* ── Main Canvas ── */}
-      <main className="flex-1 min-w-0 bg-[#07090e] p-4 sm:p-6 lg:p-8 overflow-y-auto">
+      <main className="flex-1 min-w-0 bg-theme-bg p-4 sm:p-6 lg:p-8 overflow-y-auto transition-colors duration-200">
         {authLoading ? (
           <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-purple-500" />
-            <span className="text-xs text-zinc-400 font-medium">Loading your study universe...</span>
+            <span className="text-xs text-theme-muted font-medium">Loading your study universe...</span>
           </div>
         ) : (
           children

@@ -29,7 +29,7 @@ export default function FocusTimerPage() {
   }
 
   return (
-    <div className="space-y-6 w-full relative max-w-[1600px] mx-auto pb-12">
+    <div className="space-y-6 w-full relative max-w-[1600px] mx-auto pb-12 transition-colors duration-200">
       
       {/* Floating Success Notification for Manual logs */}
       {notification && (
@@ -41,8 +41,8 @@ export default function FocusTimerPage() {
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-white font-display">Focus Zone</h1>
-        <p className="text-zinc-400 text-xs mt-0.5">
+        <h1 className="text-2xl font-bold tracking-tight text-theme-text font-display">Focus Zone</h1>
+        <p className="text-theme-muted text-xs mt-0.5">
           Run the live countdown timer or count-up stopwatch to track focus intervals, or manually record completed sessions.
         </p>
       </div>
@@ -56,11 +56,11 @@ export default function FocusTimerPage() {
 
         {/* Right Column: Integrated Manual Logging Form */}
         <div className="lg:col-span-5 w-full space-y-4">
-          <div className="bg-[#0f111a] p-4 rounded-2xl border border-white/[0.08]">
+          <div className="bg-theme-card p-4 rounded-2xl border border-theme-border">
             <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400 mb-1">
               Log Past Session
             </h3>
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-theme-muted">
               Input details of study sessions completed offline or outside the app.
             </p>
           </div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useDashboard } from '@/context/DashboardContext'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
-import { User, Shield, Info, LogOut } from 'lucide-react'
+import { User, Shield, Info, LogOut, Check } from 'lucide-react'
 
 const THEMES = [
   {
@@ -12,8 +12,9 @@ const THEMES = [
     name: 'Light Cream',
     desc: 'Cozy warm cream paper',
     bg: '#FAF7F2',
-    text: '#2A2622',
-    border: '#E6DFD5',
+    text: '#1F1C18',
+    border: '#E5DCD0',
+    accent: '#7C3AED',
     isDark: false,
   },
   {
@@ -21,17 +22,19 @@ const THEMES = [
     name: 'Sepia Paper',
     desc: 'Soft warm vintage sepia',
     bg: '#F4ECD8',
-    text: '#433422',
-    border: '#E4D5B7',
+    text: '#3E2E1E',
+    border: '#DFCEAF',
+    accent: '#C2410C',
     isDark: false,
   },
   {
     id: 'theme-dark',
     name: 'Warm Charcoal',
-    desc: 'Soothing espresso-brown',
-    bg: '#1C1A18',
-    text: '#F0EBE3',
-    border: 'rgba(240, 235, 227, 0.1)',
+    desc: 'Soothing espresso dark',
+    bg: '#181614',
+    text: '#F2EDE4',
+    border: 'rgba(242, 237, 228, 0.15)',
+    accent: '#A78BFA',
     isDark: true,
   },
   {
@@ -40,16 +43,18 @@ const THEMES = [
     desc: 'OLED pure deep black',
     bg: '#000000',
     text: '#F3F4F6',
-    border: 'rgba(243, 244, 246, 0.1)',
+    border: 'rgba(255, 255, 255, 0.1)',
+    accent: '#8B5CF6',
     isDark: true,
   },
   {
     id: 'theme-midnight',
     name: 'Midnight Blue',
     desc: 'Cool cosmic indigo blue',
-    bg: '#0A0D1A',
-    text: '#E0E6ED',
-    border: 'rgba(224, 230, 237, 0.1)',
+    bg: '#080C1A',
+    text: '#E2E8F0',
+    border: 'rgba(148, 163, 184, 0.18)',
+    accent: '#6366F1',
     isDark: true,
   },
 ]
@@ -59,16 +64,15 @@ export default function SettingsPage() {
   const supabase = createClient()
   const router = useRouter()
 
-  const [currentTheme, setCurrentTheme] = useState<string>('theme-light')
+  const [currentTheme, setCurrentTheme] = useState<string>('theme-oled')
 
   useEffect(() => {
     // Read current theme state on mount
-    const active = localStorage.getItem('theme') || 'theme-light'
+    const active = localStorage.getItem('theme') || 'theme-oled'
     setCurrentTheme(active)
 
-    // Listen to theme changes from the pull-cord quick toggle
     const syncTheme = () => {
-      setCurrentTheme(localStorage.getItem('theme') || 'theme-light')
+      setCurrentTheme(localStorage.getItem('theme') || 'theme-oled')
     }
 
     window.addEventListener('theme-change', syncTheme)
@@ -80,11 +84,12 @@ export default function SettingsPage() {
     const themeOption = THEMES.find((t) => t.id === themeId)
     if (!themeOption) return
 
-    // Clean up theme classes
+    // Clean up all theme classes
     THEMES.forEach((t) => root.classList.remove(t.id))
 
-    // Apply new theme class
+    // Apply new theme class and data attribute
     root.classList.add(themeId)
+    root.setAttribute('data-theme', themeId)
 
     // Toggle Tailwind .dark class
     if (themeOption.isDark) {
@@ -103,7 +108,7 @@ export default function SettingsPage() {
 
     setCurrentTheme(themeId)
 
-    // Dispatch global event so headers and cords update in real-time
+    // Dispatch global event so all components sync in real-time
     window.dispatchEvent(new Event('theme-change'))
   }
 
@@ -116,8 +121,8 @@ export default function SettingsPage() {
   return (
     <div className="space-y-8 max-w-5xl mx-auto w-full pb-10">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-warmtext dark:text-darktext font-display">Settings</h1>
-        <p className="text-warmtext/50 dark:text-darktext/50 text-xs mt-0.5">
+        <h1 className="text-2xl font-bold tracking-tight text-theme-text font-display">Settings</h1>
+        <p className="text-theme-muted text-xs mt-0.5">
           Manage your account profile, appearance themes, and sync configurations.
         </p>
       </div>
@@ -126,26 +131,26 @@ export default function SettingsPage() {
         {/* Top 2-Column Grid: Profile & System Status */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Profile Card */}
-          <div className="bg-[#FDFCFB] dark:bg-white/5 p-6 rounded-2xl border border-warmborder dark:border-white/10 shadow-sm transition-colors duration-300 flex flex-col justify-between">
+          <div className="bg-theme-card p-6 rounded-2xl border border-theme-border shadow-sm transition-colors duration-200 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-1.5 mb-4">
-                <User className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400" />
-                <h2 className="text-xs font-bold uppercase tracking-wider text-warmtext/50 dark:text-darktext/50">Account Profile</h2>
+                <User className="h-4.5 w-4.5 text-purple-400" />
+                <h2 className="text-xs font-bold uppercase tracking-wider text-theme-muted">Account Profile</h2>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <span className="block text-[10px] font-bold text-warmtext/40 dark:text-darktext/40 uppercase tracking-widest mb-1">Email Address</span>
-                  <p className="text-sm font-semibold text-warmtext dark:text-darktext">{user?.email || 'Offline Session'}</p>
+                  <span className="block text-[10px] font-bold text-theme-muted uppercase tracking-widest mb-1">Email Address</span>
+                  <p className="text-sm font-semibold text-theme-text">{user?.email || 'Offline Session'}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <span className="block text-[10px] font-bold text-warmtext/40 dark:text-darktext/40 uppercase tracking-widest mb-1">Username</span>
-                    <p className="text-sm font-semibold text-warmtext dark:text-darktext">{profile.username}</p>
+                    <span className="block text-[10px] font-bold text-theme-muted uppercase tracking-widest mb-1">Username</span>
+                    <p className="text-sm font-semibold text-theme-text">{profile.username}</p>
                   </div>
                   <div>
-                    <span className="block text-[10px] font-bold text-warmtext/40 dark:text-darktext/40 uppercase tracking-widest mb-1">Full Name</span>
-                    <p className="text-sm font-semibold text-warmtext dark:text-darktext">{profile.full_name || '—'}</p>
+                    <span className="block text-[10px] font-bold text-theme-muted uppercase tracking-widest mb-1">Full Name</span>
+                    <p className="text-sm font-semibold text-theme-text">{profile.full_name || '—'}</p>
                   </div>
                 </div>
               </div>
@@ -153,25 +158,25 @@ export default function SettingsPage() {
           </div>
 
           {/* Database Status Info */}
-          <div className="bg-[#FDFCFB] dark:bg-white/5 p-6 rounded-2xl border border-warmborder dark:border-white/10 shadow-sm transition-colors duration-300 flex flex-col justify-between">
+          <div className="bg-theme-card p-6 rounded-2xl border border-theme-border shadow-sm transition-colors duration-200 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-1.5 mb-4">
-                <Info className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400" />
-                <h2 className="text-xs font-bold uppercase tracking-wider text-warmtext/50 dark:text-darktext/50">System Status</h2>
+                <Info className="h-4.5 w-4.5 text-purple-400" />
+                <h2 className="text-xs font-bold uppercase tracking-wider text-theme-muted">System Status</h2>
               </div>
 
-              <div className="space-y-3 text-xs leading-relaxed text-warmtext/60 dark:text-darktext/60">
-                <div className="p-3 rounded-xl bg-warmbg dark:bg-white/5 border border-warmborder/60 dark:border-white/10 flex items-center justify-between">
-                  <span className="font-semibold text-warmtext/80 dark:text-darktext/80">Database Sync</span>
+              <div className="space-y-3 text-xs leading-relaxed text-theme-muted">
+                <div className="p-3 rounded-xl bg-theme-subtle border border-theme-border flex items-center justify-between">
+                  <span className="font-semibold text-theme-text">Database Sync</span>
                   <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
                     isOfflineMode
-                      ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
-                      : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                      ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                      : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                   }`}>
                     {isOfflineMode ? 'Offline Storage' : 'Supabase Cloud'}
                   </span>
                 </div>
-                <p className="text-[11px] text-warmtext/50 dark:text-darktext/50 leading-relaxed">
+                <p className="text-[11px] text-theme-muted leading-relaxed">
                   {isOfflineMode
                     ? 'Your data is being saved inside your local browser cache. To sync across multiple devices, define your Supabase credentials in .env.local.'
                     : 'Your study logs and streak statistics are synchronized in the cloud and available on any authorized device.'}
@@ -181,14 +186,14 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Appearance Settings */}
-        <div className="bg-[#FDFCFB] dark:bg-white/5 p-6 rounded-2xl border border-warmborder dark:border-white/10 shadow-sm transition-colors duration-300">
+        {/* Appearance Settings (5 Full Themes) */}
+        <div className="bg-theme-card p-6 rounded-2xl border border-theme-border shadow-sm transition-colors duration-200">
           <div className="flex items-center gap-1.5 mb-2">
-            <Shield className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400" />
-            <h2 className="text-xs font-bold uppercase tracking-wider text-warmtext/50 dark:text-darktext/50">Appearance Themes</h2>
+            <Shield className="h-4.5 w-4.5 text-purple-400" />
+            <h2 className="text-xs font-bold uppercase tracking-wider text-theme-muted">Appearance Themes</h2>
           </div>
-          <p className="text-[11px] text-warmtext/50 dark:text-darktext/50 mb-5">
-            Select an appearance style for your study logs. Pull the top-nav cord switch to toggle between your active light and dark preferences.
+          <p className="text-[11px] text-theme-muted mb-5">
+            Select a complete theme palette for your workspace. Theme applies across all dashboard pages, charts, widgets, and controls.
           </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5">
@@ -197,41 +202,47 @@ export default function SettingsPage() {
               return (
                 <button
                   key={themeOption.id}
+                  type="button"
                   onClick={() => handleSelectTheme(themeOption.id)}
-                  className={`flex flex-col items-center p-3 rounded-xl border text-center transition-all duration-300 ${
+                  className={`flex flex-col items-center p-3 rounded-xl border text-center transition-all duration-200 cursor-pointer ${
                     isSelected
-                      ? 'border-indigo-600 dark:border-indigo-500 ring-2 ring-indigo-500/20 bg-[#FAF7F2] dark:bg-white/10 shadow-sm'
-                      : 'border-warmborder dark:border-white/10 bg-[#FDFCFB]/50 dark:bg-transparent hover:border-warmborder/80 dark:hover:border-white/20'
+                      ? 'border-purple-500 ring-2 ring-purple-500/30 bg-theme-subtle shadow-md'
+                      : 'border-theme-border bg-theme-card hover:border-purple-400/40 hover:bg-theme-subtle'
                   }`}
                 >
-                  {/* Swatch Mini Frame */}
+                  {/* Swatch Mini Preview Frame */}
                   <div
                     style={{ backgroundColor: themeOption.bg, borderColor: themeOption.border }}
-                    className="w-full aspect-[1.3] rounded-lg border flex flex-col justify-between p-2 shadow-xs overflow-hidden mb-2 relative select-none"
+                    className="w-full aspect-[1.3] rounded-lg border flex flex-col justify-between p-2 shadow-xs overflow-hidden mb-2.5 relative select-none"
                   >
-                    {/* Simulated Text */}
+                    {/* Simulated Text Lines */}
                     <div className="space-y-1">
                       <div
                         style={{ backgroundColor: themeOption.text }}
-                        className="w-8 h-1 rounded-full opacity-40"
+                        className="w-10 h-1.5 rounded-full opacity-60"
                       />
                       <div
                         style={{ backgroundColor: themeOption.text }}
-                        className="w-5 h-0.5 rounded-full opacity-20"
+                        className="w-6 h-1 rounded-full opacity-30"
                       />
                     </div>
-                    {/* Accent Color Dot */}
+
+                    {/* Bottom Preview Pill with Selected Check */}
                     <div className="flex justify-between items-center">
-                      <div className="w-2 h-2 rounded-full bg-indigo-500" />
                       <div
-                        style={{ backgroundColor: themeOption.text }}
-                        className="w-3 h-0.5 rounded-full opacity-20"
+                        style={{ backgroundColor: themeOption.accent }}
+                        className="w-2.5 h-2.5 rounded-full shadow-xs"
                       />
+                      {isSelected && (
+                        <span className="w-3.5 h-3.5 rounded-full bg-purple-600 text-white flex items-center justify-center">
+                          <Check className="h-2.5 w-2.5" />
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  <span className="text-[11px] font-bold text-warmtext dark:text-darktext truncate w-full">{themeOption.name}</span>
-                  <span className="text-[8px] text-warmtext/50 dark:text-darktext/50 font-medium truncate w-full mt-0.5">{themeOption.desc}</span>
+                  <span className="text-xs font-bold text-theme-text truncate w-full">{themeOption.name}</span>
+                  <span className="text-[10px] text-theme-muted font-medium truncate w-full mt-0.5">{themeOption.desc}</span>
                 </button>
               )
             })}
@@ -239,14 +250,14 @@ export default function SettingsPage() {
         </div>
 
         {/* Logout Action */}
-        <div className="border border-red-200/50 dark:border-red-500/20 bg-red-50/20 dark:bg-red-500/5 p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="border border-red-500/20 bg-red-500/5 p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-red-500 dark:text-red-400">Account Session</h3>
-            <p className="text-[11px] text-warmtext/50 dark:text-darktext/50 mt-0.5">End your current session on this device.</p>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-red-400">Account Session</h3>
+            <p className="text-[11px] text-theme-muted mt-0.5">End your current session on this device.</p>
           </div>
           <button
             onClick={handleSignOut}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-colors duration-300 shadow-xs"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-colors duration-200 shadow-xs"
           >
             <LogOut className="h-4 w-4" />
             <span>Sign Out</span>
