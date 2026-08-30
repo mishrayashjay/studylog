@@ -10,8 +10,6 @@ import {
   Activity,
   ChevronDown,
   Plus,
-  Search,
-  Bell,
   Target,
   Layers,
   Code,
@@ -503,32 +501,14 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
 
-          {/* Search Button */}
+          {/* + New Session Gradient Link Button (Navigates to Focus Timer) */}
           <Link
-            href="/dashboard/history"
-            className="w-10 h-10 rounded-xl bg-theme-card border border-theme-border flex items-center justify-center text-theme-muted hover:text-theme-text hover:bg-theme-subtle transition-colors"
-            title="Search sessions and notes"
-          >
-            <Search className="h-4.5 w-4.5" />
-          </Link>
-
-          {/* Notification Bell */}
-          <button
-            className="w-10 h-10 rounded-xl bg-theme-card border border-theme-border flex items-center justify-center text-theme-muted hover:text-theme-text hover:bg-theme-subtle transition-colors relative"
-            title="Notifications"
-          >
-            <Bell className="h-4.5 w-4.5" />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-indigo-500 ring-2 ring-theme-card" />
-          </button>
-
-          {/* + New Session Gradient Button */}
-          <button
-            onClick={() => setIsNewSessionModalOpen(true)}
+            href="/dashboard/timer"
             className="flex items-center gap-2 px-4.5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500 hover:opacity-95 text-white font-semibold text-sm shadow-md shadow-purple-500/20 active:scale-[0.98] transition-all"
           >
             <Plus className="h-4 w-4" />
             <span>New Session</span>
-          </button>
+          </Link>
         </div>
       </div>
 
