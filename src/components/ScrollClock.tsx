@@ -113,17 +113,17 @@ export default function ScrollClock() {
             perspectiveOrigin: '50% 50%',
           }}
         >
-          {/* Subtle soft shadow */}
+          {/* Theme-Adaptive Shadow */}
           <motion.div
             style={{
               x: shadowX,
               y: shadowY,
               filter: useTransform(shadowBlur, b => `blur(${b}px)`),
             }}
-            className="absolute inset-0 rounded-full bg-black/40 dark:bg-black/80 pointer-events-none -z-10"
+            className="absolute inset-0 rounded-full bg-black/10 dark:bg-black/80 pointer-events-none -z-10 transition-colors duration-300"
           />
 
-          {/* Minimal Dark Clock Face */}
+          {/* Theme-Adaptive Clock Face */}
           <motion.div
             style={{
               rotateX,
@@ -166,23 +166,22 @@ export default function ScrollClock() {
                 </linearGradient>
               </defs>
 
-              {/* ── Outer Minimal Bezel ── */}
+              {/* ── Outer Bezel (Light cream / Dark charcoal) ── */}
               <circle
                 cx={CX}
                 cy={CY}
                 r={124}
-                fill="#232226"
-                stroke="#2e2d32"
+                className="fill-[#EDEAE3] stroke-[#DCD7CD] dark:fill-[#232226] dark:stroke-[#2e2d32] transition-colors duration-300"
                 strokeWidth={1.5}
                 style={{ transform: 'translateZ(2px)' }}
               />
 
-              {/* ── Dark Circular Dial Face ── */}
+              {/* ── Circular Dial Face (Clean white/cream / Dark obsidian) ── */}
               <circle
                 cx={CX}
                 cy={CY}
                 r={114}
-                fill="#18181b"
+                className="fill-[#FAF7F2] dark:fill-[#18181b] transition-colors duration-300"
                 style={{ transform: 'translateZ(4px)' }}
               />
 
@@ -216,7 +215,7 @@ export default function ScrollClock() {
                     cx={pt.cx}
                     cy={pt.cy}
                     r={2}
-                    fill="rgba(255, 255, 255, 0.18)"
+                    className="fill-black/20 dark:fill-white/[0.18] transition-colors duration-300"
                   />
                 ))}
               </g>
