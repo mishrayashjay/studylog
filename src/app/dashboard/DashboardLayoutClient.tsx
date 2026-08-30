@@ -1,48 +1,38 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/utils/supabase/client'
-import { BookOpen, LogOut, Menu, LayoutDashboard, Clock, History, Settings, X, Edit } from 'lucide-react'
-import ThemeToggle from '@/components/ThemeToggle'
+import {
+  BookOpen,
+  LayoutDashboard,
+  Clock,
+  BookMarked,
+  Target,
+  Calendar,
+  FileText,
+  BarChart2,
+  Award,
+  Settings,
+  Flame,
+  ChevronDown,
+  Menu,
+  X,
+  LogOut,
+} from 'lucide-react'
 import { useDashboard } from '@/context/DashboardContext'
+import { createClient } from '@/utils/supabase/client'
 
 interface DashboardLayoutClientProps {
   children: React.ReactNode
 }
 
 export default function DashboardLayoutClient({ children }: DashboardLayoutClientProps) {
-  const router = useRouter()
   const pathname = usePathname()
+  const router = useRouter()
   const supabase = createClient()
   const { profile, user, authLoading } = useDashboard()
-
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Closed by default
-  const [currentTime, setCurrentTime] = useState<string>('')
-
-  // Start real-time clock tick
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date()
-      setCurrentTime(
-        now.toLocaleDateString(undefined, {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        }) +
-          ' • ' +
-          now.toLocaleTimeString(undefined, {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-          })
-      )
-    }
-    updateTime()
-    const timer = setInterval(updateTime, 1000)
-    return () => clearInterval(timer)
-  }, [])
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -51,152 +41,155 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
   }
 
   const navLinks = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Focus Timer', href: '/dashboard/timer', icon: Clock },
-    { name: 'History', href: '/dashboard/history', icon: History },
-    { name: 'Notes', href: '/dashboard/notes', icon: Edit },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: true },
+    { name: 'Sessions', href: '/dashboard/history', icon: Clock },
+    { name: 'Subjects', href: '/dashboard/history?filter=subjects', icon: BookMarked },
+    { name: 'Goals', href: '/dashboard/timer', icon: Target },
+    { name: 'Calendar', href: '/dashboard/history?view=calendar', icon: Calendar },
+    { name: 'Notes', href: '/dashboard/notes', icon: FileText },
+    { name: 'Analytics', href: '/dashboard', icon: BarChart2 },
+    { name: 'Achievements', href: '/dashboard/settings', icon: Award },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ]
 
-  return (
-    <div className="min-h-screen bg-warmbg dark:bg-darkbg text-warmtext dark:text-darktext flex flex-col">
-      {/* Background glow effects */}
-      <div className="absolute top-0 right-1/4 w-[300px] h-[300px] rounded-full bg-indigo-500/5 dark:bg-indigo-500/5 blur-[100px] pointer-events-none -z-10" />
-      <div className="absolute bottom-10 left-1/4 w-[300px] h-[300px] rounded-full bg-purple-500/5 dark:bg-purple-500/5 blur-[100px] pointer-events-none -z-10" />
+  const displayName = profile.username || (user?.email ? user.email.split('@')[0] : 'mishrayashjay')
+  const initial = (displayName.charAt(0) || 'M').toUpperCase()
 
-      {/* Top Navigation Bar - with balanced padding */}
-      <nav className="sticky top-0 z-30 border-b border-warmborder dark:border-white/10 bg-[#FAF7F2]/80 dark:bg-[#1C1A18]/80 backdrop-blur-md h-[69px] flex items-center px-6 md:px-8">
-        <div className="w-full max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* Hamburger Toggle button */}
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 hover:bg-warmbg dark:hover:bg-white/10 rounded-lg text-warmtext/70 dark:text-darktext/75 hover:text-warmtext dark:hover:text-darktext transition-colors"
-              aria-label="Toggle Sidebar Menu"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-
-            <div className="flex items-center gap-2.5 ml-2">
-              <div className="p-1.5 bg-indigo-50 dark:bg-indigo-950/40 rounded-lg text-indigo-600 dark:text-indigo-400 shadow-xs">
-                <BookOpen className="h-4 w-4" />
-              </div>
-              <span className="font-bold text-base tracking-tight font-display text-warmtext dark:text-darktext">studylog</span>
-            </div>
+  const sidebarContent = (
+    <div className="flex flex-col justify-between h-full p-4.5 bg-[#07090e] text-white border-r border-white/[0.08] select-none">
+      {/* Brand Header */}
+      <div className="space-y-6">
+        <Link href="/dashboard" className="flex items-center gap-3 px-2 py-1 group">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-violet-500 flex items-center justify-center text-white shadow-md shadow-purple-500/20 group-hover:opacity-95 transition-opacity">
+            <BookOpen className="h-4 w-4" />
           </div>
+          <span className="font-display font-medium text-white text-lg tracking-tight">
+            studylog
+          </span>
+        </Link>
 
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
+        {/* Navigation Items */}
+        <nav className="space-y-1.5">
+          {navLinks.map((link) => {
+            const isActive = link.exact
+              ? pathname === link.href
+              : pathname === link.href || (link.href !== '/dashboard' && pathname.startsWith(link.href.split('?')[0]))
 
-            <div className="text-right hidden sm:block border-l border-warmborder dark:border-white/10 pl-4">
-              <p className="text-[9px] font-bold text-warmtext/50 dark:text-darktext/50 uppercase tracking-wider">Signed in as</p>
-              <p className="text-xs font-bold text-warmtext/80 dark:text-darktext/80">
-                {profile.full_name || profile.username || user?.email || 'Scholar'}
-              </p>
-            </div>
-
-            <button
-              onClick={handleSignOut}
-              className="p-2 hover:bg-warmbg dark:hover:bg-white/10 rounded-lg text-warmtext/60 dark:text-darktext/50 hover:text-warmtext dark:hover:text-darktext transition-colors flex items-center gap-2 text-sm font-semibold"
-              title="Sign Out"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Sign Out</span>
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Grid: Content wrapper */}
-      <div className="flex-1 flex relative">
-        {/* Full-width main container with centered content */}
-        <main className="flex-grow p-6 md:p-8 w-full relative">
-          {authLoading ? (
-            <div className="flex flex-col items-center justify-center min-h-[350px] gap-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-600 dark:border-indigo-400" />
-              <span className="text-[10px] text-warmtext/40 dark:text-darktext/40 font-bold uppercase tracking-widest">
-                Authorizing study session...
-              </span>
-            </div>
-          ) : (
-            <div className="max-w-7xl mx-auto w-full">
-              {children}
-            </div>
-          )}
-        </main>
-
-        {/* Semi-transparent dark overlay behind drawer */}
-        {isSidebarOpen && (
-          <div
-            onClick={() => setIsSidebarOpen(false)}
-            className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-xs transition-opacity duration-300 ease-out"
-          />
-        )}
-
-        {/* Slide-out drawer navigation (hidden by default, open on click) */}
-        <aside
-          className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#FDFCFB] dark:bg-darkbg border-r border-warmborder dark:border-white/10 p-6 flex flex-col justify-between shadow-2xl transition-transform duration-300 ease-out transform ${
-            isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}
-        >
-          <div className="space-y-6 w-full">
-            {/* Drawer Brand Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-warmborder/60 dark:border-white/10">
-              <div className="flex items-center gap-2.5">
-                <div className="p-1.5 bg-indigo-50 dark:bg-indigo-950/40 rounded-lg text-indigo-600 dark:text-indigo-400 shadow-xs">
-                  <BookOpen className="h-4 w-4" />
-                </div>
-                <span className="font-bold text-lg tracking-tight font-display text-warmtext dark:text-darktext">studylog</span>
-              </div>
-              {/* Close icon button inside drawer */}
-              <button
-                onClick={() => setIsSidebarOpen(false)}
-                className="p-1.5 hover:bg-warmbg dark:hover:bg-white/10 rounded-lg text-warmtext/50 dark:text-darktext/50 hover:text-warmtext dark:hover:text-darktext transition-colors"
-                aria-label="Close Sidebar"
+            return (
+              <Link
+                key={link.name}
+                href={link.href}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  isActive
+                    ? 'bg-purple-900/40 text-purple-200 border border-purple-500/30 shadow-sm shadow-purple-950/50'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
+                }`}
               >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Large, touch-friendly nav links */}
-            <div className="space-y-2">
-              {navLinks.map((link) => {
-                const isActive =
-                  link.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(link.href)
-
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setIsSidebarOpen(false)}
-                    className={`flex items-center gap-3.5 px-4.5 py-3.5 rounded-xl text-base font-bold transition-colors duration-150 ${
-                      isActive
-                        ? 'bg-indigo-600 dark:bg-indigo-500 text-white shadow-md shadow-indigo-600/10'
-                        : 'text-warmtext/60 dark:text-darktext/50 hover:bg-warmbg dark:hover:bg-white/10 hover:text-warmtext dark:hover:text-darktext'
-                    }`}
-                  >
-                    <link.icon className="h-5.5 w-5.5 shrink-0" />
-                    <span>{link.name}</span>
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Drawer Copyright Footer */}
-          <div className="pt-4 border-t border-warmborder/60 dark:border-white/10 text-center text-xs text-warmtext/40 dark:text-darktext/40">
-            &copy; {new Date().getFullYear()} studylog
-          </div>
-        </aside>
+                <link.icon className={`h-4.5 w-4.5 shrink-0 ${isActive ? 'text-purple-400' : 'text-zinc-400'}`} />
+                <span>{link.name}</span>
+              </Link>
+            )
+          })}
+        </nav>
       </div>
 
-      {/* Floating Real-Time Clock */}
-      {currentTime && (
-        <div className="fixed bottom-4 right-4 z-40 bg-[#FDFCFB] dark:bg-white/10 backdrop-blur-md border border-warmborder dark:border-white/20 rounded-xl px-4.5 py-2.5 shadow-md text-sm font-semibold font-mono text-warmtext dark:text-white flex items-center gap-2">
-          <Clock className="h-4 w-4 text-indigo-600 dark:text-indigo-300 animate-pulse" />
-          <span>{currentTime}</span>
+      {/* Bottom Area: Motivational Card + User Profile */}
+      <div className="space-y-4 pt-4 border-t border-white/[0.06]">
+        {/* "Keep going!" Motivational Card */}
+        <div className="p-3.5 rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.02] border border-white/[0.08] shadow-inner">
+          <div className="flex items-center gap-2 mb-1.5">
+            <Flame className="h-4 w-4 text-amber-400 fill-amber-400/20" />
+            <span className="text-xs font-bold text-white tracking-tight">Keep going!</span>
+          </div>
+          <p className="text-[11px] text-zinc-400 leading-relaxed mb-3">
+            You&apos;re building something great. Consistency is the key.
+          </p>
+          <div className="space-y-1">
+            <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+              <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 w-3/4" />
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] font-mono font-bold text-zinc-400">75%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* User Profile Row */}
+        <div className="flex items-center justify-between px-2 py-1.5 rounded-xl hover:bg-white/[0.04] transition-colors cursor-pointer group">
+          <Link href="/dashboard/settings" className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shadow-sm shrink-0">
+              {initial}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-white truncate">{displayName}</p>
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-zinc-400 group-hover:text-zinc-300 transition-colors">View Profile</span>
+                <ChevronDown className="h-3 w-3 text-zinc-400 group-hover:text-zinc-200 transition-colors" />
+              </div>
+            </div>
+          </Link>
+          <button
+            onClick={handleSignOut}
+            title="Sign out"
+            className="p-1 text-zinc-400 hover:text-red-400 transition-colors ml-1"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen bg-[#07090e] text-white flex flex-col md:flex-row overflow-x-hidden font-sans">
+      {/* ── Mobile Top Header Bar ── */}
+      <div className="md:hidden flex items-center justify-between p-4 border-b border-white/[0.08] bg-[#07090e]/95 backdrop-blur-md sticky top-0 z-40">
+        <Link href="/dashboard" className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 via-purple-500 to-violet-500 flex items-center justify-center text-white shadow-sm">
+            <BookOpen className="h-3.5 w-3.5" />
+          </div>
+          <span className="font-display font-medium text-white text-base">studylog</span>
+        </Link>
+
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 text-zinc-400 hover:text-white rounded-lg"
+          aria-label="Toggle navigation"
+        >
+          {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+      </div>
+
+      {/* ── Mobile Drawer Overlay ── */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-xs"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <div className="relative w-72 h-full z-10">
+            {sidebarContent}
+          </div>
         </div>
       )}
+
+      {/* ── Persistent Desktop Left Sidebar ── */}
+      <aside className="hidden md:flex flex-col w-64 shrink-0 h-screen sticky top-0 z-30">
+        {sidebarContent}
+      </aside>
+
+      {/* ── Main Canvas ── */}
+      <main className="flex-1 min-w-0 bg-[#07090e] p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        {authLoading ? (
+          <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-purple-500" />
+            <span className="text-xs text-zinc-400 font-medium">Loading your study universe...</span>
+          </div>
+        ) : (
+          children
+        )}
+      </main>
     </div>
   )
 }
