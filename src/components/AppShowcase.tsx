@@ -17,14 +17,16 @@ import {
   Trash2,
   FileText,
   BookOpen,
-  Calendar
+  Calendar,
+  Layers,
+  Code
 } from 'lucide-react'
 
 // ── 1. Dashboard Mockup (Matching Real studylog Dashboard Layout) ──────────────
 
 function DashboardMockupCard() {
   return (
-    <div className="rounded-2xl border border-warmborder dark:border-white/10 bg-[#FAF7F2] dark:bg-[#0D0E12] shadow-2xl shadow-purple-500/10 overflow-hidden flex flex-col h-[420px] select-none text-left font-sans">
+    <div className="rounded-2xl border border-warmborder dark:border-white/10 bg-[#FAF7F2] dark:bg-[#0D0E12] shadow-2xl shadow-purple-500/10 overflow-hidden flex flex-col h-[440px] select-none text-left font-sans">
       {/* Top Header Row */}
       <div className="shrink-0 border-b border-warmborder/60 dark:border-white/10 px-4 py-2.5 flex items-center justify-between bg-white/70 dark:bg-white/[0.03] backdrop-blur-xs">
         <div className="flex items-center gap-2 min-w-0">
@@ -55,76 +57,76 @@ function DashboardMockupCard() {
       </div>
 
       {/* Main Canvas Scroll Area */}
-      <div className="flex-1 min-h-0 p-3.5 space-y-3 overflow-hidden bg-warmbg/30 dark:bg-black/20">
+      <div className="flex-1 min-h-0 p-3.5 space-y-2.5 overflow-hidden bg-warmbg/30 dark:bg-black/20 flex flex-col justify-between">
         
         {/* 4 Stat Cards */}
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-4 gap-2 shrink-0">
           {/* 1. Study Time */}
           <div className="p-2 bg-white dark:bg-white/5 rounded-xl border border-warmborder dark:border-white/10 flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-[8px] font-medium text-warmtext/50 dark:text-white/40 truncate">Study Time</span>
+              <span className="text-[7.5px] font-medium text-warmtext/50 dark:text-white/40 truncate">Study Time</span>
               <Clock className="h-3 w-3 text-purple-500" />
             </div>
-            <div className="mt-1">
-              <span className="text-xs sm:text-sm font-bold text-warmtext dark:text-white font-display">12.5h</span>
-              <span className="text-[7px] text-purple-600 dark:text-purple-400 block font-medium">This Week</span>
+            <div className="mt-0.5">
+              <span className="text-xs sm:text-sm font-bold text-warmtext dark:text-white font-display leading-tight">12.5h</span>
+              <span className="text-[6.5px] text-purple-600 dark:text-purple-400 block font-medium">This Week</span>
             </div>
           </div>
 
           {/* 2. Streak */}
           <div className="p-2 bg-white dark:bg-white/5 rounded-xl border border-warmborder dark:border-white/10 flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-[8px] font-medium text-warmtext/50 dark:text-white/40 truncate">Streak</span>
+              <span className="text-[7.5px] font-medium text-warmtext/50 dark:text-white/40 truncate">Streak</span>
               <Bookmark className="h-3 w-3 text-blue-500" />
             </div>
-            <div className="mt-1">
-              <span className="text-xs sm:text-sm font-bold text-warmtext dark:text-white font-display">6 days</span>
-              <span className="text-[7px] text-blue-500 block font-medium">🔥 Active</span>
+            <div className="mt-0.5">
+              <span className="text-xs sm:text-sm font-bold text-blue-500 font-display leading-tight">6 days</span>
+              <span className="text-[6.5px] text-blue-500 block font-medium">🔥 Active</span>
             </div>
           </div>
 
           {/* 3. Sessions */}
           <div className="p-2 bg-white dark:bg-white/5 rounded-xl border border-warmborder dark:border-white/10 flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-[8px] font-medium text-warmtext/50 dark:text-white/40 truncate">Sessions</span>
+              <span className="text-[7.5px] font-medium text-warmtext/50 dark:text-white/40 truncate">Sessions</span>
               <CheckCircle2 className="h-3 w-3 text-teal-500" />
             </div>
-            <div className="mt-1">
-              <span className="text-xs sm:text-sm font-bold text-warmtext dark:text-white font-display">14</span>
-              <span className="text-[7px] text-teal-500 block font-medium">Completed</span>
+            <div className="mt-0.5">
+              <span className="text-xs sm:text-sm font-bold text-teal-500 font-display leading-tight">14</span>
+              <span className="text-[6.5px] text-teal-500 block font-medium">Completed</span>
             </div>
           </div>
 
           {/* 4. Total Time */}
           <div className="p-2 bg-white dark:bg-white/5 rounded-xl border border-warmborder dark:border-white/10 flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-[8px] font-medium text-warmtext/50 dark:text-white/40 truncate">All-Time</span>
+              <span className="text-[7.5px] font-medium text-warmtext/50 dark:text-white/40 truncate">All-Time</span>
               <Trophy className="h-3 w-3 text-amber-500" />
             </div>
-            <div className="mt-1">
-              <span className="text-xs sm:text-sm font-bold text-warmtext dark:text-white font-display">48.2h</span>
-              <span className="text-[7px] text-amber-500 block font-medium">Lifetime</span>
+            <div className="mt-0.5">
+              <span className="text-xs sm:text-sm font-bold text-amber-500 font-display leading-tight">48.2h</span>
+              <span className="text-[6.5px] text-amber-500 block font-medium">Lifetime</span>
             </div>
           </div>
         </div>
 
-        {/* Two Columns Grid */}
-        <div className="grid grid-cols-12 gap-2.5">
+        {/* Middle Two Columns Grid (Chart & Focus Panel) */}
+        <div className="grid grid-cols-12 gap-2.5 flex-1 min-h-0">
           {/* Left Main (7 of 12 cols): Study Overview Real SVG Area Chart */}
-          <div className="col-span-7 bg-white dark:bg-white/5 p-3 rounded-xl border border-warmborder dark:border-white/10 flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-1">
+          <div className="col-span-7 bg-white dark:bg-white/5 p-2.5 rounded-xl border border-warmborder dark:border-white/10 flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-0.5">
               <div className="flex items-center gap-1.5">
                 <Activity className="h-3 w-3 text-purple-500" />
                 <span className="text-[9px] font-bold text-warmtext dark:text-white">Study Overview</span>
               </div>
-              <span className="text-[8px] px-1.5 py-0.5 rounded bg-warmbg dark:bg-white/10 text-warmtext/60 dark:text-white/50 font-medium">
+              <span className="text-[7.5px] px-1.5 py-0.5 rounded bg-warmbg dark:bg-white/10 text-warmtext/60 dark:text-white/50 font-medium">
                 This Week
               </span>
             </div>
 
             {/* SVG Chart Preview with Distinct Y-Ticks and Day Dates */}
-            <div className="relative w-full h-24 my-1">
-              <svg viewBox="0 0 300 100" className="w-full h-full overflow-visible">
+            <div className="relative w-full h-20 my-0.5">
+              <svg viewBox="0 0 300 90" className="w-full h-full overflow-visible">
                 <defs>
                   <linearGradient id="mockGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.35" />
@@ -132,27 +134,27 @@ function DashboardMockupCard() {
                   </linearGradient>
                 </defs>
                 {/* Horizontal Grid lines */}
-                <line x1="20" y1="15" x2="295" y2="15" stroke="currentColor" className="text-warmborder/60 dark:text-white/5" strokeDasharray="2 2" />
-                <line x1="20" y1="45" x2="295" y2="45" stroke="currentColor" className="text-warmborder/60 dark:text-white/5" strokeDasharray="2 2" />
-                <line x1="20" y1="75" x2="295" y2="75" stroke="currentColor" className="text-warmborder/60 dark:text-white/5" />
+                <line x1="20" y1="12" x2="295" y2="12" stroke="currentColor" className="text-warmborder/60 dark:text-white/5" strokeDasharray="2 2" />
+                <line x1="20" y1="38" x2="295" y2="38" stroke="currentColor" className="text-warmborder/60 dark:text-white/5" strokeDasharray="2 2" />
+                <line x1="20" y1="64" x2="295" y2="64" stroke="currentColor" className="text-warmborder/60 dark:text-white/5" />
 
                 {/* Y labels */}
-                <text x="2" y="18" fill="currentColor" className="text-warmtext/30 dark:text-white/30" fontSize="7">2h</text>
-                <text x="2" y="48" fill="currentColor" className="text-warmtext/30 dark:text-white/30" fontSize="7">1h</text>
-                <text x="2" y="78" fill="currentColor" className="text-warmtext/30 dark:text-white/30" fontSize="7">0</text>
+                <text x="2" y="15" fill="currentColor" className="text-warmtext/30 dark:text-white/30" fontSize="7">2h</text>
+                <text x="2" y="41" fill="currentColor" className="text-warmtext/30 dark:text-white/30" fontSize="7">1h</text>
+                <text x="2" y="67" fill="currentColor" className="text-warmtext/30 dark:text-white/30" fontSize="7">0</text>
 
                 {/* Area and Line */}
-                <path d="M 30,65 C 65,40 100,50 135,20 C 170,35 205,15 240,30 C 270,55 285,40 290,45 L 290,75 L 30,75 Z" fill="url(#mockGrad)" />
-                <path d="M 30,65 C 65,40 100,50 135,20 C 170,35 205,15 240,30 C 270,55 285,40 290,45" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" />
+                <path d="M 30,55 C 65,35 100,45 135,18 C 170,30 205,12 240,25 C 270,48 285,35 290,40 L 290,64 L 30,64 Z" fill="url(#mockGrad)" />
+                <path d="M 30,55 C 65,35 100,45 135,18 C 170,30 205,12 240,25 C 270,48 285,35 290,40" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" />
 
                 {/* Points */}
-                <circle cx="135" cy="20" r="3" fill="#a855f7" stroke="white" strokeWidth="1.5" />
-                <circle cx="205" cy="15" r="3" fill="#a855f7" stroke="white" strokeWidth="1.5" />
-                <circle cx="240" cy="30" r="3" fill="#a855f7" stroke="white" strokeWidth="1.5" />
+                <circle cx="135" cy="18" r="2.5" fill="#a855f7" stroke="white" strokeWidth="1" />
+                <circle cx="205" cy="12" r="2.5" fill="#a855f7" stroke="white" strokeWidth="1" />
+                <circle cx="240" cy="25" r="2.5" fill="#a855f7" stroke="white" strokeWidth="1" />
 
                 {/* X-axis days + dates */}
                 {['M 25', 'T 26', 'W 27', 'T 28', 'F 29', 'S 30', 'S 31'].map((d, i) => (
-                  <text key={d} x={30 + i * 43} y="92" textAnchor="middle" fill="currentColor" className={i === 6 ? 'text-purple-600 dark:text-purple-400 font-bold' : 'text-warmtext/40 dark:text-white/30'} fontSize="7">
+                  <text key={d} x={30 + i * 43} y="78" textAnchor="middle" fill="currentColor" className={i === 6 ? 'text-purple-600 dark:text-purple-400 font-bold' : 'text-warmtext/40 dark:text-white/30'} fontSize="6.5">
                     {d}
                   </text>
                 ))}
@@ -160,7 +162,7 @@ function DashboardMockupCard() {
             </div>
 
             {/* Footer Metrics */}
-            <div className="grid grid-cols-3 gap-1 pt-1.5 border-t border-warmborder/50 dark:border-white/10 text-[7px]">
+            <div className="grid grid-cols-3 gap-1 pt-1 border-t border-warmborder/50 dark:border-white/10 text-[6.5px]">
               <div>
                 <span className="text-warmtext/40 dark:text-white/30 block">Total</span>
                 <span className="font-bold text-warmtext dark:text-white">12.5 hrs</span>
@@ -177,26 +179,31 @@ function DashboardMockupCard() {
           </div>
 
           {/* Right Main (5 of 12 cols): Live Focus Clock Ring & Subject Donut */}
-          <div className="col-span-5 flex flex-col gap-2">
+          <div className="col-span-5 flex flex-col gap-2 justify-between">
             {/* Today's Focus Circular Dial */}
-            <div className="bg-white dark:bg-white/5 p-2.5 rounded-xl border border-warmborder dark:border-white/10 flex flex-col items-center">
-              <div className="w-16 h-16 rounded-full border-[3px] border-purple-500/20 border-t-purple-500 flex flex-col items-center justify-center relative">
-                <span className="font-mono text-xs font-bold text-warmtext dark:text-white">25:00</span>
-                <span className="text-[6px] text-purple-600 dark:text-purple-400 font-bold uppercase tracking-wider">Focus</span>
+            <div className="bg-white dark:bg-white/5 p-2 rounded-xl border border-warmborder dark:border-white/10 flex flex-col items-center justify-center flex-1">
+              <div className="w-14 h-14 rounded-full border-[2.5px] border-purple-500/20 border-t-purple-500 flex flex-col items-center justify-center relative shadow-xs">
+                <span className="font-mono text-xs font-bold text-warmtext dark:text-white leading-none">25:00</span>
+                <span className="text-[6px] text-purple-600 dark:text-purple-400 font-bold uppercase tracking-wider mt-0.5">Focus</span>
               </div>
-              <span className="mt-1 text-[8px] font-semibold text-warmtext/70 dark:text-white/70 px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-300">
-                Computer Science
-              </span>
-              <div className="flex gap-1.5 mt-1.5">
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-[7.5px] font-semibold text-purple-600 dark:text-purple-300 px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 truncate max-w-[90px]">
+                  Computer Science
+                </span>
+              </div>
+              <div className="flex gap-1.5 mt-1">
                 <div className="p-1 rounded-full bg-warmbg dark:bg-white/10 text-warmtext/50 dark:text-white/40"><RotateCcw className="h-2 w-2" /></div>
-                <div className="p-1 rounded-full bg-purple-600 text-white"><Play className="h-2 w-2 fill-white" /></div>
+                <div className="p-1 rounded-full bg-purple-600 text-white shadow-xs"><Play className="h-2 w-2 fill-white" /></div>
                 <div className="p-1 rounded-full bg-warmbg dark:bg-white/10 text-warmtext/50 dark:text-white/40"><Pause className="h-2 w-2" /></div>
               </div>
             </div>
 
-            {/* Time by Subject */}
-            <div className="bg-white dark:bg-white/5 p-2 rounded-xl border border-warmborder dark:border-white/10 space-y-1">
-              <span className="text-[7px] font-bold text-warmtext/40 dark:text-white/30 uppercase tracking-wider block">Time by Subject</span>
+            {/* Time by Subject Bars */}
+            <div className="bg-white dark:bg-white/5 p-2 rounded-xl border border-warmborder dark:border-white/10 space-y-1 shrink-0">
+              <div className="flex items-center justify-between text-[7px] font-bold text-warmtext/50 dark:text-white/40 uppercase tracking-wider">
+                <span>Time by Subject</span>
+                <span className="text-purple-500">2 Active</span>
+              </div>
               <div className="space-y-0.5">
                 <div className="flex justify-between text-[7px] font-semibold text-warmtext/70 dark:text-white/60"><span>CompSci</span><span>65%</span></div>
                 <div className="h-1 bg-warmbg dark:bg-white/10 rounded-full overflow-hidden"><div className="h-full bg-purple-500 rounded-full w-[65%]" /></div>
@@ -205,6 +212,48 @@ function DashboardMockupCard() {
                 <div className="flex justify-between text-[7px] font-semibold text-warmtext/70 dark:text-white/60"><span>Math</span><span>25%</span></div>
                 <div className="h-1 bg-warmbg dark:bg-white/10 rounded-full overflow-hidden"><div className="h-full bg-blue-500 rounded-full w-[25%]" /></div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Row: Recent Sessions Preview */}
+        <div className="bg-white dark:bg-white/5 p-2.5 rounded-xl border border-warmborder dark:border-white/10 shrink-0 space-y-1.5">
+          <div className="flex items-center justify-between text-[7.5px] font-bold text-warmtext/50 dark:text-white/40 uppercase tracking-wider">
+            <span>Recent Activity</span>
+            <span className="text-purple-600 dark:text-purple-400 font-semibold">View All →</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {/* Session 1 */}
+            <div className="flex items-center justify-between p-1.5 rounded-lg bg-warmbg/40 dark:bg-white/[0.02] border border-warmborder/40 dark:border-white/5">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <div className="p-1 rounded bg-purple-500/10 text-purple-500 shrink-0">
+                  <Code className="h-2.5 w-2.5" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[8px] font-bold text-warmtext dark:text-white truncate block">Algorithms & DP</span>
+                  <span className="text-[6.5px] text-warmtext/40 dark:text-white/35">Today, 9:14 AM</span>
+                </div>
+              </div>
+              <span className="text-[7.5px] font-semibold text-purple-600 dark:text-purple-300 px-1.5 py-0.5 rounded bg-purple-500/10 shrink-0">
+                1h 45m
+              </span>
+            </div>
+
+            {/* Session 2 */}
+            <div className="flex items-center justify-between p-1.5 rounded-lg bg-warmbg/40 dark:bg-white/[0.02] border border-warmborder/40 dark:border-white/5">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <div className="p-1 rounded bg-blue-500/10 text-blue-500 shrink-0">
+                  <Layers className="h-2.5 w-2.5" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[8px] font-bold text-warmtext dark:text-white truncate block">Linear Algebra</span>
+                  <span className="text-[6.5px] text-warmtext/40 dark:text-white/35">Yesterday, 8:30 PM</span>
+                </div>
+              </div>
+              <span className="text-[7.5px] font-semibold text-blue-600 dark:text-blue-300 px-1.5 py-0.5 rounded bg-blue-500/10 shrink-0">
+                55m
+              </span>
             </div>
           </div>
         </div>
@@ -242,7 +291,7 @@ function HistoryMockupCard() {
   ]
 
   return (
-    <div className="rounded-2xl border border-warmborder dark:border-white/10 bg-[#FAF7F2] dark:bg-[#0D0E12] shadow-2xl shadow-indigo-500/10 overflow-hidden flex flex-col h-[420px] select-none text-left font-sans">
+    <div className="rounded-2xl border border-warmborder dark:border-white/10 bg-[#FAF7F2] dark:bg-[#0D0E12] shadow-2xl shadow-indigo-500/10 overflow-hidden flex flex-col h-[440px] select-none text-left font-sans">
       {/* History Header with Filters */}
       <div className="shrink-0 border-b border-warmborder/60 dark:border-white/10 p-3.5 flex flex-col gap-2.5 bg-white/70 dark:bg-white/[0.03]">
         <div className="flex items-center justify-between">
@@ -330,7 +379,7 @@ function HistoryMockupCard() {
 
 function NotepadMockupCard() {
   return (
-    <div className="rounded-2xl border border-warmborder dark:border-white/10 bg-[#FAF7F2] dark:bg-[#0D0E12] shadow-2xl shadow-purple-500/10 overflow-hidden flex flex-col h-[420px] select-none text-left font-sans">
+    <div className="rounded-2xl border border-warmborder dark:border-white/10 bg-[#FAF7F2] dark:bg-[#0D0E12] shadow-2xl shadow-purple-500/10 overflow-hidden flex flex-col h-[440px] select-none text-left font-sans">
       {/* Top Header */}
       <div className="shrink-0 border-b border-warmborder/60 dark:border-white/10 px-4 py-2.5 flex items-center justify-between bg-white/70 dark:bg-white/[0.03]">
         <div className="flex items-center gap-2">
