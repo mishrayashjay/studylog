@@ -1,96 +1,275 @@
 'use client'
 
-import { useRef } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { useState, useEffect, useRef } from 'react'
+import { motion, useScroll, useTransform, useSpring } from 'framer-motion'
+
+// Clock Geometry
+const CX = 140
+const CY = 140
+const VB = 280
+
+const HOUR_LENGTH = 46  // Short, bold
+const MIN_LENGTH  = 78  // Longer, sleek
+const SEC_LENGTH  = 94  // Longest, thin needle
+
+const HOUR_WIDTH = 6
+const MIN_WIDTH  = 3.5
+const SEC_WIDTH  = 1.5
+
+// Minor hour dots (1, 2, 4, 5, 7, 8, 10, 11) at radius 98
+const MINOR_HOURS = [1, 2, 4, 5, 7, 8, 10, 11].map(h => {
+  const a = (h * 30 - 90) * (Math.PI / 180)
+  return {
+    cx: CX + 98 * Math.cos(a),
+    cy: CY + 98 * Math.sin(a),
+  }
+})
 
 export default function ScrollClock() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  
-  // Track scroll progress of this specific component within the viewport
+  const sectionRef = useRef<HTMLDivElement>(null)
+
+  // ── Real-Time Clock State (Starts at standard 10:10:30 before hydration, then live ticks)
+  const [angles, setAngles] = useState({
+    hour: 305,
+    minute: 60,
+    second: 180,
+  })
+
+  useEffect(() => {
+    let animId: number
+    const updateClock = () => {
+      const now = new Date()
+      const ms = now.getMilliseconds()
+      const s = now.getSeconds() + ms / 1000
+      const m = now.getMinutes() + s / 60
+      const h = (now.getHours() % 12) + m / 60
+
+      setAngles({
+        hour: h * 30,       // (h % 12) * 30 + m * 0.5 + s * (0.5/60)
+        minute: m * 6,      // m * 6 + s * 0.1
+        second: s * 6,      // 360° per 60s
+      })
+
+      animId = requestAnimationFrame(updateClock)
+    }
+
+    animId = requestAnimationFrame(updateClock)
+    return () => cancelAnimationFrame(animId)
+  }, [])
+
+  // ── 3D Scroll Perspective / Tilt (Interactive depth on scroll)
   const { scrollYProgress } = useScroll({
-    target: containerRef,
+    target: sectionRef,
     offset: ['start end', 'end start'],
   })
 
-  // Map scroll progress to clock hands rotation:
-  // Minute hand rotates 4 complete circles (1440 degrees) as we scroll past the clock
-  const minuteRotate = useTransform(scrollYProgress, [0, 1], [0, 1440])
-  // Hour hand rotates 1 complete circle (360 degrees)
-  const hourRotate = useTransform(scrollYProgress, [0, 1], [0, 120])
+  const smooth = useSpring(scrollYProgress, { stiffness: 80, damping: 25, restDelta: 0.0001 })
+  const rotateX = useTransform(smooth, [0, 0.5, 1], [-8, 0, 8])
+  const rotateY = useTransform(smooth, [0, 0.5, 1], [8, 0, -8])
+  const clockScale = useTransform(smooth, [0, 0.5, 1], [0.96, 1.02, 0.96])
+  const shadowX = useTransform(smooth, [0, 1], [-14, 14])
+  const shadowY = useTransform(smooth, [0, 1], [-6, 18])
+  const shadowBlur = useTransform(smooth, [0, 0.5, 1], [18, 36, 18])
 
-  // Map scroll progress to subtle 3D tilt rotations for depth
-  const rotateX = useTransform(scrollYProgress, [0, 1], [-12, 12])
-  const rotateY = useTransform(scrollYProgress, [0, 1], [-8, 8])
+  // ── Pure Trigonometric Coordinates for Real-Time Hands (Anchored at (140, 140))
+  const hourX2 = CX + HOUR_LENGTH * Math.sin((angles.hour * Math.PI) / 180)
+  const hourY2 = CY - HOUR_LENGTH * Math.cos((angles.hour * Math.PI) / 180)
+
+  const minX2 = CX + MIN_LENGTH * Math.sin((angles.minute * Math.PI) / 180)
+  const minY2 = CY - MIN_LENGTH * Math.cos((angles.minute * Math.PI) / 180)
+
+  const secX2 = CX + SEC_LENGTH * Math.sin((angles.second * Math.PI) / 180)
+  const secY2 = CY - SEC_LENGTH * Math.cos((angles.second * Math.PI) / 180)
 
   return (
-    <div
-      ref={containerRef}
-      className="mt-24 mb-16 flex flex-col items-center justify-center relative py-12 w-full select-none"
+    <section
+      ref={sectionRef}
+      className="relative w-full py-16 select-none"
     >
-      {/* Dynamic Background Glow */}
-      <div className="absolute w-[250px] h-[250px] rounded-full bg-indigo-500/5 dark:bg-indigo-500/5 blur-[80px] pointer-events-none -z-10" />
+      {/* Centered content frame */}
+      <div className="flex flex-col items-center justify-center overflow-hidden">
 
-      {/* Intro Subtitle */}
-      <div className="text-center mb-10 shrink-0 z-10 max-w-sm px-6">
-        <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">
-          Time Visualization
-        </span>
-        <h2 className="font-bold text-xl sm:text-2xl text-warmtext dark:text-darktext mt-1.5 font-display">
-          Watch Time Work For You
-        </h2>
-        <p className="text-xs text-warmtext/50 dark:text-darktext/50 mt-2 leading-relaxed">
-          Scroll down to see how study hours convert into streaks. studylog transforms spent time into tangible milestones.
-        </p>
-      </div>
+        {/* Ambient glow */}
+        <div className="absolute w-[500px] h-[500px] rounded-full bg-indigo-600/[0.04] dark:bg-indigo-500/[0.03] blur-[140px] pointer-events-none" />
 
-      {/* 3D Clock viewport */}
-      <div className="perspective-[1000px] w-60 h-60 sm:w-68 sm:h-68 relative flex items-center justify-center z-10">
-        <motion.div
-          style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
-          className="w-full h-full rounded-full bg-gradient-to-br from-[#FAF7F2] to-[#E6DFD5] dark:from-[#201D1B] dark:to-[#1C1A18] border border-warmborder dark:border-white/10 shadow-[0_20px_50px_-12px_rgba(99,102,241,0.15)] dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)] flex items-center justify-center relative"
+        {/* Header */}
+        <div className="relative z-10 text-center mb-10 max-w-xl px-4">
+          <span className="text-xs font-mono font-bold tracking-[0.25em] text-indigo-500 dark:text-indigo-400 uppercase">
+            Time Visualization
+          </span>
+          <h2 className="mt-3 font-display font-black text-3xl sm:text-4xl text-warmtext dark:text-darktext tracking-tight">
+            Watch Time Work For You
+          </h2>
+          <p className="mt-3 text-sm text-warmtext/65 dark:text-darktext/60 leading-relaxed">
+            Scroll down to see how study hours convert into streaks. studylog transforms spent time into tangible milestones.
+          </p>
+        </div>
+
+        {/* 3D Perspective Wrapper */}
+        <div
+          className="relative z-10"
+          style={{
+            perspective: '1200px',
+            perspectiveOrigin: '50% 50%',
+          }}
         >
-          {/* Inner ring inset for depth shadow */}
-          <div className="absolute inset-4 rounded-full border border-warmborder/30 dark:border-white/5 bg-transparent shadow-[inset_0_2px_8px_rgba(0,0,0,0.03)] dark:shadow-[inset_0_2px_8px_rgba(0,0,0,0.4)]" />
+          {/* Subtle soft shadow */}
+          <motion.div
+            style={{
+              x: shadowX,
+              y: shadowY,
+              filter: useTransform(shadowBlur, b => `blur(${b}px)`),
+            }}
+            className="absolute inset-0 rounded-full bg-black/40 dark:bg-black/80 pointer-events-none -z-10"
+          />
 
-          {/* Clock Face ticks */}
-          {Array.from({ length: 12 }).map((_, i) => {
-            const angle = (i * 30 * Math.PI) / 180
-            const x = Math.sin(angle) * 98
-            const y = -Math.cos(angle) * 98
-            const isQuarter = i % 3 === 0
+          {/* Minimal Dark Clock Face */}
+          <motion.div
+            style={{
+              rotateX,
+              rotateY,
+              scale: clockScale,
+              transformStyle: 'preserve-3d',
+            }}
+          >
+            <svg
+              viewBox={`0 0 ${VB} ${VB}`}
+              width={290}
+              height={290}
+              className="overflow-visible"
+            >
+              <defs>
+                {/* Dynamic Gradient for Hour Hand (aligned from center to tip) */}
+                <linearGradient
+                  id="hourGradTrig"
+                  x1={CX}
+                  y1={CY}
+                  x2={hourX2}
+                  y2={hourY2}
+                  gradientUnits="userSpaceOnUse"
+                >
+                  <stop offset="0%" stopColor="#818cf8" />
+                  <stop offset="100%" stopColor="#e879f9" />
+                </linearGradient>
 
-            return (
-              <div
-                key={i}
-                style={{
-                  transform: `translate(${x}px, ${y}px) rotate(${i * 30}deg)`,
-                  transformOrigin: 'center center',
-                }}
-                className={`absolute w-1 rounded-full ${
-                  isQuarter
-                    ? 'h-3 bg-indigo-600 dark:bg-indigo-400'
-                    : 'h-1.5 bg-warmtext/20 dark:bg-white/10'
-                }`}
+                {/* Dynamic Gradient for Minute Hand (aligned from center to tip) */}
+                <linearGradient
+                  id="minGradTrig"
+                  x1={CX}
+                  y1={CY}
+                  x2={minX2}
+                  y2={minY2}
+                  gradientUnits="userSpaceOnUse"
+                >
+                  <stop offset="0%" stopColor="#818cf8" />
+                  <stop offset="100%" stopColor="#60a5fa" />
+                </linearGradient>
+              </defs>
+
+              {/* ── Outer Minimal Bezel ── */}
+              <circle
+                cx={CX}
+                cy={CY}
+                r={124}
+                fill="#232226"
+                stroke="#2e2d32"
+                strokeWidth={1.5}
+                style={{ transform: 'translateZ(2px)' }}
               />
-            )
-          })}
 
-          {/* Center Pin */}
-          <div className="absolute w-3.5 h-3.5 rounded-full bg-indigo-600 dark:bg-indigo-500 shadow-md z-30 border border-white/20" />
+              {/* ── Dark Circular Dial Face ── */}
+              <circle
+                cx={CX}
+                cy={CY}
+                r={114}
+                fill="#18181b"
+                style={{ transform: 'translateZ(4px)' }}
+              />
 
-          {/* Minute Hand (faster) */}
-          <motion.div
-            style={{ rotate: minuteRotate, transformOrigin: 'bottom center' }}
-            className="absolute bottom-1/2 left-[calc(50%-1.5px)] w-[3px] h-[82px] bg-indigo-600 dark:bg-indigo-400 rounded-full z-20 shadow-sm"
-          />
+              {/* ── Tick Marks (4 Pill Markers + 8 Subtle Dots) ── */}
+              <g style={{ transform: 'translateZ(6px)' }}>
+                {/* 12 o'clock pill */}
+                <line
+                  x1={140} y1={36} x2={140} y2={46}
+                  stroke="#818cf8" strokeWidth={3.5} strokeLinecap="round"
+                />
+                {/* 3 o'clock pill */}
+                <line
+                  x1={244} y1={140} x2={234} y2={140}
+                  stroke="#818cf8" strokeWidth={3.5} strokeLinecap="round"
+                />
+                {/* 6 o'clock pill */}
+                <line
+                  x1={140} y1={244} x2={140} y2={234}
+                  stroke="#818cf8" strokeWidth={3.5} strokeLinecap="round"
+                />
+                {/* 9 o'clock pill */}
+                <line
+                  x1={36} y1={140} x2={46} y2={140}
+                  stroke="#818cf8" strokeWidth={3.5} strokeLinecap="round"
+                />
 
-          {/* Hour Hand (slower) */}
-          <motion.div
-            style={{ rotate: hourRotate, transformOrigin: 'bottom center' }}
-            className="absolute bottom-1/2 left-[calc(50%-2.5px)] w-[5px] h-[58px] bg-purple-600 dark:bg-purple-400 rounded-full z-10 shadow-sm"
-          />
-        </motion.div>
+                {/* Minor hour dots (1, 2, 4, 5, 7, 8, 10, 11) */}
+                {MINOR_HOURS.map((pt, i) => (
+                  <circle
+                    key={i}
+                    cx={pt.cx}
+                    cy={pt.cy}
+                    r={2}
+                    fill="rgba(255, 255, 255, 0.18)"
+                  />
+                ))}
+              </g>
+
+              {/* ── Real-Time Live Clock Hands (Anchored strictly at (140, 140)) ── */}
+              <g style={{ transform: 'translateZ(10px)' }}>
+
+                {/* 1. Real-Time Hour Hand */}
+                <line
+                  x1={CX}
+                  y1={CY}
+                  x2={hourX2}
+                  y2={hourY2}
+                  stroke="url(#hourGradTrig)"
+                  strokeWidth={HOUR_WIDTH}
+                  strokeLinecap="round"
+                />
+
+                {/* 2. Real-Time Minute Hand */}
+                <line
+                  x1={CX}
+                  y1={CY}
+                  x2={minX2}
+                  y2={minY2}
+                  stroke="url(#minGradTrig)"
+                  strokeWidth={MIN_WIDTH}
+                  strokeLinecap="round"
+                />
+
+                {/* 3. Real-Time Second Hand (Coral Red needle ticking / sweeping in real time) */}
+                <line
+                  x1={CX}
+                  y1={CY}
+                  x2={secX2}
+                  y2={secY2}
+                  stroke="#f43f5e"
+                  strokeWidth={SEC_WIDTH}
+                  strokeLinecap="round"
+                />
+
+                {/* 4. Center Pivot Pin (Solid filled periwinkle circle locked at (140, 140)) */}
+                <circle
+                  cx={CX}
+                  cy={CY}
+                  r={7.5}
+                  fill="#818cf8"
+                />
+              </g>
+            </svg>
+          </motion.div>
+        </div>
+
       </div>
-    </div>
+    </section>
   )
 }
