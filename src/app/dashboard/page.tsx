@@ -504,13 +504,17 @@ export default function DashboardOverviewPage() {
 
           {/* Motivational Quote Card with Smooth Fade Rotation & Hover Tooltip */}
           <div
-            className="relative group hidden xl:flex items-center"
+            className="relative hidden xl:block"
             onMouseEnter={() => setIsQuotePopoverOpen(true)}
             onMouseLeave={() => setIsQuotePopoverOpen(false)}
-            onClick={() => setIsQuotePopoverOpen((prev) => !prev)}
           >
             {/* Collapsed Card */}
-            <div className="flex items-center gap-2 bg-theme-card hover:bg-theme-subtle border border-theme-border px-3.5 py-2.5 rounded-2xl text-xs text-theme-text shadow-xs max-w-xs cursor-pointer transition-all">
+            <button
+              type="button"
+              onClick={() => setIsQuotePopoverOpen((prev) => !prev)}
+              aria-label="View full motivational quote"
+              className="flex items-center gap-2 bg-theme-card hover:bg-theme-subtle border border-theme-border px-3.5 py-2.5 rounded-2xl text-xs text-theme-text shadow-xs max-w-xs cursor-pointer transition-all text-left"
+            >
               <span className="text-purple-400 font-serif text-base leading-none shrink-0">&ldquo;</span>
               <div
                 className={`flex items-center gap-1.5 min-w-0 transition-opacity duration-300 ease-in-out ${
@@ -520,31 +524,34 @@ export default function DashboardOverviewPage() {
                 <span className="italic truncate">{currentQuote.text}</span>
                 <span className="text-theme-muted text-[11px] shrink-0">— {currentQuote.author}</span>
               </div>
-            </div>
+            </button>
 
-            {/* Full Quote Tooltip / Popover (Appears on Hover or Tap) */}
-            <div
-              className={`absolute bottom-full right-0 mb-2.5 z-50 w-72 sm:w-80 p-4 bg-theme-card border border-theme-border rounded-2xl shadow-2xl transition-all duration-200 pointer-events-none ${
-                isQuotePopoverOpen
-                  ? 'opacity-100 translate-y-0 scale-100'
-                  : 'opacity-0 translate-y-1 scale-95 pointer-events-none'
-              }`}
-            >
-              <div className="space-y-2.5">
-                <div className="flex items-start gap-2">
-                  <span className="text-purple-400 font-serif text-xl leading-none shrink-0">&ldquo;</span>
-                  <p className="text-xs sm:text-sm italic text-theme-text leading-relaxed font-serif">
-                    {currentQuote.text}&rdquo;
-                  </p>
-                </div>
-                <div className="flex items-center justify-between pt-2 border-t border-theme-border">
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-purple-400">Quote of the Day</span>
-                  <span className="text-xs font-semibold text-theme-muted">— {currentQuote.author}</span>
+            {/* Full Quote Tooltip / Popover (Appears Directly Below the Card) */}
+            {isQuotePopoverOpen && (
+              <div
+                className="absolute top-full right-0 mt-2 z-50 w-80 sm:w-96 p-4.5 bg-theme-card border border-theme-border rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-150 select-none"
+              >
+                {/* Upward Caret Arrow pointing up to the card */}
+                <div className="absolute right-8 -top-1.5 w-3 h-3 bg-theme-card border-l border-t border-theme-border rotate-45" />
+
+                <div className="relative space-y-3">
+                  <div className="flex items-start gap-2.5">
+                    <span className="text-purple-400 font-serif text-2xl leading-none shrink-0">&ldquo;</span>
+                    <p className="text-xs sm:text-sm italic text-theme-text leading-relaxed font-serif pt-0.5">
+                      {currentQuote.text}&rdquo;
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between pt-2.5 border-t border-theme-border">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-purple-400">
+                      Quote of the Day
+                    </span>
+                    <span className="text-xs font-semibold text-theme-muted">
+                      — {currentQuote.author}
+                    </span>
+                  </div>
                 </div>
               </div>
-              {/* Downward Caret Arrow */}
-              <div className="absolute right-8 top-full w-0 h-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-theme-border" />
-            </div>
+            )}
           </div>
 
           {/* + New Session Gradient Link Button (Navigates to Focus Timer) */}
