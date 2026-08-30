@@ -152,21 +152,24 @@ export default function DashboardOverviewPage() {
     return () => clearInterval(timer)
   }, [])
 
-  const formattedLiveDateTime = useMemo(() => {
+  const formattedLiveDate = useMemo(() => {
     if (!currentTime) return ''
-    const datePart = currentTime.toLocaleDateString('en-US', {
+    return currentTime.toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'long',
       day: 'numeric',
       year: 'numeric',
     })
-    const timePart = currentTime.toLocaleTimeString('en-US', {
+  }, [currentTime])
+
+  const formattedLiveTime = useMemo(() => {
+    if (!currentTime) return ''
+    return currentTime.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
       second: '2-digit',
       hour12: true,
     })
-    return `${datePart} · ${timePart}`
   }, [currentTime])
   
   // Custom subject creation in "Today's Focus"
@@ -462,7 +465,7 @@ export default function DashboardOverviewPage() {
 
       {/* ═══ 1. TOP HEADER ROW ════════════════════════════════════ */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
+        <div className="space-y-2">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-theme-text font-display flex items-center gap-2">
             <span>Welcome back,</span>
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-indigo-400">
@@ -470,18 +473,25 @@ export default function DashboardOverviewPage() {
             </span>
             <span className="text-2xl">👋</span>
           </h1>
-          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-xs sm:text-sm mt-1">
-            <p className="text-theme-muted">
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-theme-muted text-xs sm:text-sm">
               Every page you read today is a step toward your goals.
             </p>
-            {formattedLiveDateTime && (
-              <>
-                <span className="hidden sm:inline text-theme-border">•</span>
-                <div className="inline-flex items-center gap-1.5 text-[11px] font-mono text-theme-text bg-theme-subtle px-2.5 py-0.5 rounded-lg border border-theme-border shadow-xs">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                  <span>{formattedLiveDateTime}</span>
+            {formattedLiveDate && (
+              <div className="inline-flex items-center gap-2.5 bg-theme-subtle px-3 py-1.5 rounded-xl border border-theme-border shadow-xs">
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <div className="flex flex-col leading-tight">
+                  <span className="text-xs font-semibold text-theme-text font-sans">
+                    {formattedLiveDate}
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold font-mono text-purple-400 tracking-normal">
+                    {formattedLiveTime}
+                  </span>
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -504,7 +514,7 @@ export default function DashboardOverviewPage() {
           {/* + New Session Gradient Link Button (Navigates to Focus Timer) */}
           <Link
             href="/dashboard/timer"
-            className="flex items-center gap-2 px-4.5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500 hover:opacity-95 text-white font-semibold text-sm shadow-md shadow-purple-500/20 active:scale-[0.98] transition-all"
+            className="flex items-center gap-2 px-4.5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500 hover:opacity-95 text-white font-semibold text-sm shadow-md shadow-purple-500/20 active:scale-[0.98] transition-all shrink-0"
           >
             <Plus className="h-4 w-4" />
             <span>New Session</span>
