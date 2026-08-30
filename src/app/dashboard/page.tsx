@@ -6,10 +6,9 @@ import {
   Clock,
   Bookmark,
   CheckCircle2,
-  Star,
+  Trophy,
   Activity,
   ChevronDown,
-  Trophy,
   Plus,
   Search,
   Bell,
@@ -21,14 +20,27 @@ import {
   X,
   ArrowRight,
   Sparkles,
-  CalendarDays
+  CalendarDays,
+  Pause,
+  Play,
+  Square
 } from 'lucide-react'
 import { useDashboard } from '@/context/DashboardContext'
 
 const SUBJECT_COLORS = ['#8b5cf6', '#3b82f6', '#06b6d4', '#f59e0b', '#ec4899', '#10b981']
 
 export default function DashboardOverviewPage() {
-  const { sessions, profile, user, handleAddSession } = useDashboard()
+  const {
+    sessions,
+    profile,
+    user,
+    handleAddSession,
+    timerState,
+    startTimer,
+    pauseTimer,
+    stopAndLogTimer,
+    setTimerSubject,
+  } = useDashboard()
 
   // ── State for Interactive Features ──
   const [isNewSessionModalOpen, setIsNewSessionModalOpen] = useState(false)
@@ -39,6 +51,9 @@ export default function DashboardOverviewPage() {
   const [modalTopic, setModalTopic] = useState('')
   const [modalMinutes, setModalMinutes] = useState(60)
   const [isSubmittingSession, setIsSubmittingSession] = useState(false)
+
+  // Today's focus subject selector when idle
+  const [idleSubject, setIdleSubject] = useState('Computer Science')
 
   // Submit quick session modal
   const handleModalAddSession = async (e: React.FormEvent) => {
@@ -189,9 +204,6 @@ export default function DashboardOverviewPage() {
       }))
       .sort((a, b) => b.secs - a.secs)
 
-    // Focus score: proportional to consistency (sessions count / targets)
-    const focusScore = Math.min(100, Math.round((weekSessionCount * 15) + (realStreak * 10))) || (sessions.length > 0 ? 85 : 0)
-
     return {
       totalWeekHours,
       totalWeekHoursStr: formatH(totalWeekHours),
@@ -204,9 +216,8 @@ export default function DashboardOverviewPage() {
       todayHoursStr: formatH(todaySecs / 3600),
       todaySecs,
       recentSessions: sortedSessions.slice(0, 5),
-      focusScore,
     }
-  }, [sessions, realStreak])
+  }, [sessions])
 
   // Chart SVG Coordinates based strictly on REAL dayHours
   const chartPoints = useMemo(() => {
@@ -251,6 +262,16 @@ export default function DashboardOverviewPage() {
     if (isToday) return `Today, ${timeStr}`
     if (isYesterday) return `Yesterday, ${timeStr}`
     return `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${timeStr}`
+  }
+
+  // Format live stopwatch time
+  const formatLiveTimer = (totalSecs: number) => {
+    const hrs = Math.floor(totalSecs / 3600)
+    const mins = Math.floor((totalSecs % 3600) / 60)
+    const secs = totalSecs % 60
+    const pad = (n: number) => String(n).padStart(2, '0')
+    if (hrs > 0) return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`
+    return `${pad(mins)}:${pad(secs)}`
   }
 
   // Get icon for subject
@@ -349,64 +370,78 @@ export default function DashboardOverviewPage() {
         {/* ── LEFT / CENTER MAIN COLUMN (8 of 12 cols) ────────────── */}
         <div className="lg:col-span-8 space-y-6">
 
-          {/* ── 4 STAT CARDS ROW (100% Real Supabase Data) ── */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {/* 1. Study Time */}
-            <div className="bg-[#0f111a] border border-white/[0.08] p-4.5 rounded-2xl shadow-sm hover:border-purple-500/30 transition-all">
+          {/* ── 4 STAT CARDS ROW (100% Real Supabase Data & Clean Box Layout) ── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5 sm:gap-4">
+            {/* 1. Study Time (This Week) */}
+            <div className="bg-[#0f111a] border border-white/[0.08] p-4 sm:p-4.5 rounded-2xl shadow-sm hover:border-purple-500/30 transition-all flex flex-col justify-between overflow-hidden min-w-0 h-full">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-9 h-9 rounded-xl bg-purple-950/60 border border-purple-800/40 text-purple-400 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-purple-950/60 border border-purple-800/40 text-purple-400 flex items-center justify-center shrink-0">
                   <Clock className="h-4.5 w-4.5" />
                 </div>
               </div>
-              <p className="text-[11px] font-medium text-zinc-400">Study Time (This Week)</p>
-              <p className="text-xl sm:text-2xl font-bold font-display text-white mt-0.5">{realStats.totalWeekHoursStr}</p>
-              <p className="text-[10px] font-semibold text-zinc-500 mt-1.5 flex items-center gap-1">
-                <span>{realStats.totalWeekHours > 0 ? 'Active this week' : 'No time logged yet'}</span>
-              </p>
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-zinc-400 truncate">Study Time (This Week)</p>
+                <p className="text-lg sm:text-xl xl:text-2xl font-bold font-display text-white mt-1 truncate">
+                  {realStats.totalWeekHoursStr}
+                </p>
+                <p className="text-[11px] font-medium text-zinc-500 mt-2 truncate flex items-center gap-1">
+                  <span>{realStats.totalWeekHours > 0 ? 'Active this week' : 'No time logged yet'}</span>
+                </p>
+              </div>
             </div>
 
             {/* 2. Real Current Streak */}
-            <div className="bg-[#0f111a] border border-white/[0.08] p-4.5 rounded-2xl shadow-sm hover:border-blue-500/30 transition-all">
+            <div className="bg-[#0f111a] border border-white/[0.08] p-4 sm:p-4.5 rounded-2xl shadow-sm hover:border-blue-500/30 transition-all flex flex-col justify-between overflow-hidden min-w-0 h-full">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-950/60 border border-blue-800/40 text-blue-400 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-blue-950/60 border border-blue-800/40 text-blue-400 flex items-center justify-center shrink-0">
                   <Bookmark className="h-4.5 w-4.5" />
                 </div>
               </div>
-              <p className="text-[11px] font-medium text-zinc-400">Current Streak</p>
-              <p className="text-xl sm:text-2xl font-bold font-display text-white mt-0.5">
-                {realStreak} {realStreak === 1 ? 'day' : 'days'}
-              </p>
-              <p className="text-[10px] font-semibold text-amber-400 mt-1.5 flex items-center gap-1">
-                <span>{realStreak > 0 ? '🔥 Keep it up!' : 'Start your streak today!'}</span>
-              </p>
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-zinc-400 truncate">Current Streak</p>
+                <p className="text-lg sm:text-xl xl:text-2xl font-bold font-display text-white mt-1 truncate">
+                  {realStreak} {realStreak === 1 ? 'day' : 'days'}
+                </p>
+                <p className="text-[11px] font-medium text-amber-400 mt-2 truncate flex items-center gap-1">
+                  <span>{realStreak > 0 ? '🔥 Active streak' : 'Start streak today!'}</span>
+                </p>
+              </div>
             </div>
 
-            {/* 3. Real Sessions Completed */}
-            <div className="bg-[#0f111a] border border-white/[0.08] p-4.5 rounded-2xl shadow-sm hover:border-teal-500/30 transition-all">
+            {/* 3. Real Sessions Completed This Week */}
+            <div className="bg-[#0f111a] border border-white/[0.08] p-4 sm:p-4.5 rounded-2xl shadow-sm hover:border-teal-500/30 transition-all flex flex-col justify-between overflow-hidden min-w-0 h-full">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-9 h-9 rounded-xl bg-teal-950/60 border border-teal-800/40 text-teal-400 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-teal-950/60 border border-teal-800/40 text-teal-400 flex items-center justify-center shrink-0">
                   <CheckCircle2 className="h-4.5 w-4.5" />
                 </div>
               </div>
-              <p className="text-[11px] font-medium text-zinc-400">Sessions (This Week)</p>
-              <p className="text-xl sm:text-2xl font-bold font-display text-white mt-0.5">{realStats.weekSessionCount}</p>
-              <p className="text-[10px] font-semibold text-teal-400 mt-1.5 flex items-center gap-1">
-                <span>{sessions.length} total logged</span>
-              </p>
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-zinc-400 truncate">Sessions (This Week)</p>
+                <p className="text-lg sm:text-xl xl:text-2xl font-bold font-display text-white mt-1 truncate">
+                  {realStats.weekSessionCount}
+                </p>
+                <p className="text-[11px] font-medium text-teal-400 mt-2 truncate flex items-center gap-1">
+                  <span>{sessions.length} total logged</span>
+                </p>
+              </div>
             </div>
 
-            {/* 4. Focus Score */}
-            <div className="bg-[#0f111a] border border-white/[0.08] p-4.5 rounded-2xl shadow-sm hover:border-amber-500/30 transition-all">
+            {/* 4. Real All-Time Total Study Time */}
+            <div className="bg-[#0f111a] border border-white/[0.08] p-4 sm:p-4.5 rounded-2xl shadow-sm hover:border-amber-500/30 transition-all flex flex-col justify-between overflow-hidden min-w-0 h-full">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-9 h-9 rounded-xl bg-amber-950/60 border border-amber-800/40 text-amber-400 flex items-center justify-center">
-                  <Star className="h-4.5 w-4.5 fill-amber-400/20" />
+                <div className="w-9 h-9 rounded-xl bg-amber-950/60 border border-amber-800/40 text-amber-400 flex items-center justify-center shrink-0">
+                  <Trophy className="h-4.5 w-4.5" />
                 </div>
               </div>
-              <p className="text-[11px] font-medium text-zinc-400">Focus Score</p>
-              <p className="text-xl sm:text-2xl font-bold font-display text-white mt-0.5">{realStats.focusScore}%</p>
-              <p className="text-[10px] font-semibold text-amber-400 mt-1.5 flex items-center gap-1">
-                <span>{realStats.focusScore >= 80 ? '★ Excellent!' : 'Building focus'}</span>
-              </p>
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-zinc-400 truncate">All-Time Study Time</p>
+                <p className="text-lg sm:text-xl xl:text-2xl font-bold font-display text-white mt-1 truncate">
+                  {realStats.totalAllHoursStr}
+                </p>
+                <p className="text-[11px] font-medium text-zinc-500 mt-2 truncate flex items-center gap-1">
+                  <span>Lifetime focus</span>
+                </p>
+              </div>
             </div>
           </div>
 
@@ -681,10 +716,10 @@ export default function DashboardOverviewPage() {
 
         </div>
 
-        {/* ── RIGHT SIDEBAR COLUMN (4 of 12 cols - Clean & Balanced) ── */}
+        {/* ── RIGHT SIDEBAR COLUMN (4 of 12 cols - Fully Real & Connected) ── */}
         <div className="lg:col-span-4 space-y-6">
 
-          {/* 1. "TODAY'S FOCUS" LIVE FOCUS CONTROLLER */}
+          {/* 1. "TODAY'S FOCUS" LIVE FUNCTIONAL TIMER CONTROLLER */}
           <div className="bg-[#0f111a] border border-white/[0.08] p-6 rounded-2xl shadow-sm space-y-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -692,73 +727,147 @@ export default function DashboardOverviewPage() {
                 <h3 className="text-sm font-bold text-white font-display">Today&apos;s Focus</h3>
               </div>
               <Link href="/dashboard/timer" className="text-xs text-purple-400 hover:text-purple-300 font-medium transition-colors">
-                Open Timer
+                Full Timer →
               </Link>
             </div>
 
-            {/* Glowing Circular Progress Ring showing real time studied today */}
-            <div className="flex flex-col items-center justify-center py-3">
-              <div className="relative w-44 h-44 flex items-center justify-center">
-                <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
-                  {/* Track Background */}
-                  <circle cx="60" cy="60" r="50" fill="none" stroke="#1b1e2c" strokeWidth="8" />
-                  {/* Glowing Progress Ring (proportional to today's study vs 2h daily goal) */}
-                  <circle
-                    cx="60" cy="60" r="50" fill="none"
-                    stroke="#a855f7"
-                    strokeWidth="8"
-                    strokeDasharray="314"
-                    strokeDashoffset={314 - Math.min(314, (realStats.todaySecs / 7200) * 314)}
-                    strokeLinecap="round"
-                    style={{ filter: 'drop-shadow(0 0 8px rgba(168, 85, 247, 0.6))' }}
-                  />
-                </svg>
+            {/* ── ACTIVE RUNNING SESSION VIEW ── */}
+            {timerState.isRunning || timerState.seconds > 0 ? (
+              <div className="flex flex-col items-center justify-center py-2 space-y-4">
+                <div className="relative w-44 h-44 flex items-center justify-center">
+                  <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="#1b1e2c" strokeWidth="8" />
+                    <circle
+                      cx="60" cy="60" r="50" fill="none"
+                      stroke="#a855f7"
+                      strokeWidth="8"
+                      strokeDasharray="314"
+                      strokeDashoffset={314 - ((timerState.seconds % 3600) / 3600) * 314}
+                      strokeLinecap="round"
+                      style={{ filter: 'drop-shadow(0 0 8px rgba(168, 85, 247, 0.6))' }}
+                    />
+                  </svg>
 
-                {/* Inner Info */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center space-y-1">
-                  <span className="text-2xl font-black font-display text-white tracking-tight">
-                    {realStats.todayHoursStr}
-                  </span>
-                  <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">
-                    Studied Today
-                  </span>
+                  {/* Real Live Running Time */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center space-y-1">
+                    <span className="text-2xl font-black font-mono text-white tracking-tight">
+                      {formatLiveTimer(timerState.seconds)}
+                    </span>
+                    <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">
+                      {timerState.isRunning ? 'Active Time' : 'Paused'}
+                    </span>
+
+                    {/* Pause / Resume Button */}
+                    <button
+                      onClick={() => timerState.isRunning ? pauseTimer() : startTimer()}
+                      className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white transition-transform active:scale-95 shadow-sm mt-1"
+                      title={timerState.isRunning ? "Pause stopwatch" : "Resume stopwatch"}
+                    >
+                      {timerState.isRunning ? <Pause className="h-3.5 w-3.5 fill-white" /> : <Play className="h-3.5 w-3.5 fill-white ml-0.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Real Subject & Live Status */}
+                <div className="text-center space-y-1">
+                  <p className="text-sm font-bold text-white">{timerState.subject}</p>
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${timerState.isRunning ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                    <span className={`text-xs font-medium ${timerState.isRunning ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      {timerState.isRunning ? 'Session in progress' : 'Session paused'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Finish & Log Action Buttons */}
+                <div className="w-full space-y-2 pt-2 border-t border-white/[0.06]">
+                  <button
+                    onClick={() => stopAndLogTimer('Dashboard focus session')}
+                    className="w-full py-2.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500 hover:opacity-95 text-white font-semibold text-xs rounded-xl shadow-md shadow-purple-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                  >
+                    <Square className="h-3.5 w-3.5 fill-white" />
+                    <span>Finish & Save Session</span>
+                  </button>
+                  <Link
+                    href="/dashboard/timer"
+                    className="w-full py-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-zinc-300 hover:text-white font-semibold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors block text-center"
+                  >
+                    Open in Fullscreen Timer
+                  </Link>
                 </div>
               </div>
+            ) : (
+              /* ── IDLE STATE VIEW (Genuine real stats & one-click start) ── */
+              <div className="flex flex-col items-center justify-center py-2 space-y-5">
+                <div className="relative w-40 h-40 flex items-center justify-center">
+                  <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="#1b1e2c" strokeWidth="8" />
+                    {/* Ring filled based on today's study vs 2h daily baseline */}
+                    <circle
+                      cx="60" cy="60" r="50" fill="none"
+                      stroke="#8b5cf6"
+                      strokeWidth="8"
+                      strokeDasharray="314"
+                      strokeDashoffset={314 - Math.min(314, (realStats.todaySecs / 7200) * 314)}
+                      strokeLinecap="round"
+                    />
+                  </svg>
 
-              {/* Subject Tag & Status */}
-              <div className="text-center mt-4 space-y-1">
-                <p className="text-sm font-bold text-white">
-                  {realStats.subjectList[0]?.name || 'Focus Session'}
-                </p>
-                <div className="flex items-center justify-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-xs font-medium text-emerald-400">
-                    {realStats.todaySecs > 0 ? 'Logged Today' : 'Ready to start'}
-                  </span>
+                  {/* Real Time Studied Today */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center space-y-0.5">
+                    <span className="text-xl font-bold font-display text-white tracking-tight">
+                      {realStats.todayHoursStr}
+                    </span>
+                    <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">
+                      Studied Today
+                    </span>
+                  </div>
+                </div>
+
+                {/* Quick Subject Select for Next Session */}
+                <div className="w-full space-y-2">
+                  <label className="block text-[11px] font-semibold text-zinc-400">Select Subject to Focus</label>
+                  <select
+                    value={idleSubject}
+                    onChange={(e) => {
+                      setIdleSubject(e.target.value)
+                      setTimerSubject(e.target.value)
+                    }}
+                    className="w-full px-3 py-2 rounded-xl bg-[#161a26] border border-white/10 text-xs text-white focus:outline-none focus:border-purple-500 cursor-pointer"
+                  >
+                    <option value="Computer Science">Computer Science</option>
+                    <option value="Mathematics">Mathematics</option>
+                    <option value="Physics">Physics</option>
+                    <option value="Chemistry">Chemistry</option>
+                    <option value="Biology">Biology</option>
+                    <option value="Literature">Literature</option>
+                    <option value="General Study">General Study</option>
+                  </select>
+                </div>
+
+                {/* Quick Action Buttons */}
+                <div className="w-full space-y-2 pt-1 border-t border-white/[0.06]">
+                  <button
+                    onClick={() => startTimer(idleSubject)}
+                    className="w-full py-2.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500 hover:opacity-95 text-white font-semibold text-xs rounded-xl shadow-md shadow-purple-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                  >
+                    <Play className="h-3.5 w-3.5 fill-white" />
+                    <span>Start Focus Session</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsNewSessionModalOpen(true)}
+                    className="w-full py-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-zinc-300 hover:text-white font-semibold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Log Past Study Time</span>
+                  </button>
                 </div>
               </div>
-            </div>
-
-            {/* Quick Actions to Launch Timer or Log Session */}
-            <div className="space-y-2 pt-2 border-t border-white/[0.06]">
-              <Link
-                href="/dashboard/timer"
-                className="w-full py-2.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500 hover:opacity-95 text-white font-semibold text-xs rounded-xl shadow-md shadow-purple-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-              >
-                <Clock className="h-4 w-4" />
-                <span>Launch Focus Stopwatch</span>
-              </Link>
-              <button
-                onClick={() => setIsNewSessionModalOpen(true)}
-                className="w-full py-2.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-zinc-300 hover:text-white font-semibold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Log Past Study Time</span>
-              </button>
-            </div>
+            )}
           </div>
 
-          {/* 2. "GOALS & MILESTONES" HONEST COMING SOON CARD (Balanced visual space with no fabricated data) */}
+          {/* 2. "GOALS & MILESTONES" HONEST COMING SOON CARD */}
           <div className="bg-[#0f111a] border border-white/[0.08] p-5 sm:p-6 rounded-2xl shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

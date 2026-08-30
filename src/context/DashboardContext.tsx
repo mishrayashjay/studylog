@@ -23,6 +23,12 @@ export interface Note {
   updated_at: string
 }
 
+export interface ActiveTimerState {
+  isRunning: boolean
+  seconds: number
+  subject: string
+}
+
 interface DashboardContextType {
   user: User | null
   profile: {
@@ -47,6 +53,12 @@ interface DashboardContextType {
   handleUpdateNote: (id: string, updates: Partial<Note>) => Promise<void>
   handleDeleteNote: (id: string) => Promise<void>
   authLoading: boolean
+  timerState: ActiveTimerState
+  startTimer: (newSubject?: string) => void
+  pauseTimer: () => void
+  resetTimer: () => void
+  setTimerSubject: (subject: string) => void
+  stopAndLogTimer: (notes?: string) => Promise<void>
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined)
@@ -185,7 +197,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     }
   }
 
-  const handleAddSession = async (sessionData: {
+  const handleAddSession = useCallback(async (sessionData: {
     subject: string
     duration: number
     notes: string
@@ -204,8 +216,13 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
         ...newSessionItem,
         id: Math.random().toString(36).substr(2, 9),
       }
-      const updated = [sessionWithId, ...sessions]
-      saveSessions(updated)
+      setSessions((prev) => {
+        const updated = [sessionWithId, ...prev]
+        if (user) {
+          localStorage.setItem(`studylog_sessions_${user.id}`, JSON.stringify(updated))
+        }
+        return updated
+      })
     } else {
       try {
         const { data, error } = await supabase
@@ -216,8 +233,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
         if (error) throw error
 
         if (data && data[0]) {
-          const updated = [data[0], ...sessions]
-          setSessions(updated)
+          setSessions((prev) => [data[0], ...prev])
         }
       } catch (err) {
         console.error('Failed to add session to Supabase, falling back to local storage', err)
@@ -226,12 +242,17 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
           ...newSessionItem,
           id: Math.random().toString(36).substr(2, 9),
         }
-        const updated = [sessionWithId, ...sessions]
-        saveSessions(updated)
+        setSessions((prev) => {
+          const updated = [sessionWithId, ...prev]
+          if (user) {
+            localStorage.setItem(`studylog_sessions_${user.id}`, JSON.stringify(updated))
+          }
+          return updated
+        })
       }
     }
     setPrefilledDuration(null)
-  }
+  }, [isOfflineMode, user])
 
   const handleDeleteSession = async (id: string) => {
     if (isOfflineMode) {
@@ -382,6 +403,60 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     }
   }, [isOfflineMode, user])
 
+  // ── Global Live Timer State ──
+  const [timerState, setTimerState] = useState<ActiveTimerState>({
+    isRunning: false,
+    seconds: 0,
+    subject: 'Computer Science',
+  })
+
+  // Precision timer tick
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null
+    if (timerState.isRunning) {
+      interval = setInterval(() => {
+        setTimerState((prev) => ({ ...prev, seconds: prev.seconds + 1 }))
+      }, 1000)
+    }
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [timerState.isRunning])
+
+  const startTimer = useCallback((newSubject?: string) => {
+    setTimerState((prev) => ({
+      ...prev,
+      isRunning: true,
+      subject: newSubject || prev.subject || 'General Study',
+    }))
+  }, [])
+
+  const pauseTimer = useCallback(() => {
+    setTimerState((prev) => ({ ...prev, isRunning: false }))
+  }, [])
+
+  const resetTimer = useCallback(() => {
+    setTimerState((prev) => ({ ...prev, isRunning: false, seconds: 0 }))
+  }, [])
+
+  const setTimerSubject = useCallback((subject: string) => {
+    setTimerState((prev) => ({ ...prev, subject }))
+  }, [])
+
+  const stopAndLogTimer = useCallback(async (notes?: string) => {
+    const duration = timerState.seconds
+    const subject = timerState.subject
+    setTimerState((prev) => ({ ...prev, isRunning: false, seconds: 0 }))
+    if (duration > 0) {
+      await handleAddSession({
+        subject,
+        duration,
+        notes: notes || 'Live focus session',
+        timestamp: new Date().toISOString(),
+      })
+    }
+  }, [timerState.seconds, timerState.subject, handleAddSession])
+
   return (
     <DashboardContext.Provider
       value={{
@@ -399,6 +474,12 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
         handleUpdateNote,
         handleDeleteNote,
         authLoading,
+        timerState,
+        startTimer,
+        pauseTimer,
+        resetTimer,
+        setTimerSubject,
+        stopAndLogTimer,
       }}
     >
       {children}

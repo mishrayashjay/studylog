@@ -15,14 +15,22 @@ const COMMON_SUBJECTS = [
 ]
 
 export default function Timer() {
-  const { handleAddSession } = useDashboard()
+  const {
+    timerState,
+    startTimer,
+    pauseTimer,
+    resetTimer,
+    setTimerSubject,
+    stopAndLogTimer,
+  } = useDashboard()
 
-  const [seconds, setSeconds] = useState(0)
-  const [isRunning, setIsRunning] = useState(false)
-  const [subject, setSubject] = useState('General Study')
   const [customSubject, setCustomSubject] = useState('')
   const [isCustomMode, setIsCustomMode] = useState(false)
   const [notification, setNotification] = useState<string | null>(null)
+
+  const seconds = timerState.seconds
+  const isRunning = timerState.isRunning
+  const subject = timerState.subject
 
   // Circular progress configuration (larger, full-screen ready)
   const radius = 110
@@ -31,21 +39,6 @@ export default function Timer() {
   const targetSeconds = 3600 // Circular bar wraps at 60 mins
   const progress = Math.min(seconds / targetSeconds, 1)
   const strokeDashoffset = circumference - progress * circumference
-
-  // Robust timer effect - prevents stale closures and strict mode double ticks
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null
-
-    if (isRunning) {
-      interval = setInterval(() => {
-        setSeconds((prev) => prev + 1)
-      }, 1000)
-    }
-
-    return () => {
-      if (interval) clearInterval(interval)
-    }
-  }, [isRunning])
 
   // Clear notification timer
   useEffect(() => {
@@ -56,34 +49,22 @@ export default function Timer() {
   }, [notification])
 
   const toggleStart = () => {
-    setIsRunning(!isRunning)
-  }
-
-  const resetTimer = () => {
-    setIsRunning(false)
-    setSeconds(0)
+    if (isRunning) {
+      pauseTimer()
+    } else {
+      const activeSubj = isCustomMode ? customSubject.trim() || 'General Study' : subject
+      startTimer(activeSubj)
+    }
   }
 
   const handleStopAndLog = async () => {
     const finalSeconds = seconds
     const activeSubject = isCustomMode ? customSubject.trim() || 'General Study' : subject
 
-    // Reset stopwatch state first
-    setIsRunning(false)
-    setSeconds(0)
-
     if (finalSeconds <= 0) return
 
     try {
-      const now = new Date().toISOString()
-      await handleAddSession({
-        subject: activeSubject,
-        duration: finalSeconds,
-        notes: 'Live focus session',
-        timestamp: now,
-      })
-
-      // Show automatic log success alert
+      await stopAndLogTimer('Live focus session')
       const mins = Math.floor(finalSeconds / 60)
       const secs = finalSeconds % 60
       const formattedDuration = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`
@@ -135,7 +116,7 @@ export default function Timer() {
                 type="button"
                 onClick={() => {
                   setIsCustomMode(false)
-                  setSubject(sub)
+                  setTimerSubject(sub)
                 }}
                 className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg border transition-all duration-200 ${
                   isSelected
