@@ -11,10 +11,14 @@ create table public.study_sessions (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references public.profiles(id) on delete cascade not null,
   subject text not null,
+  section text,
   duration integer not null, -- Duration in seconds
   notes text,
   timestamp timestamp with time zone default now() not null
 );
+
+-- Migration for existing databases
+alter table public.study_sessions add column if not exists section text;
 
 -- Enable Row Level Security (RLS)
 alter table public.profiles enable row level security;

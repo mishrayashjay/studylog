@@ -8,6 +8,7 @@ export interface StudySession {
   id: string
   user_id: string
   subject: string
+  section?: string | null
   duration: number // in seconds
   notes: string | null
   timestamp: string
@@ -47,10 +48,12 @@ interface DashboardContextType {
   setPrefilledDuration: (duration: number | null) => void
   handleAddSession: (sessionData: {
     subject: string
+    section?: string | null
     duration: number // seconds
     notes: string
     timestamp: string
   }) => Promise<void>
+  handleUpdateSession: (id: string, updates: Partial<StudySession>) => Promise<void>
   handleDeleteSession: (id: string) => Promise<void>
   handleAddNote: (title?: string, content?: string, category?: string) => Promise<Note>
   handleUpdateNoteState: (id: string, updates: Partial<Note>) => void
@@ -236,6 +239,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
 
   const handleAddSession = useCallback(async (sessionData: {
     subject: string
+    section?: string | null
     duration: number
     notes: string
     timestamp: string
@@ -243,6 +247,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     const newSessionItem: Omit<StudySession, 'id'> = {
       user_id: user?.id || 'local-user',
       subject: sessionData.subject,
+      section: sessionData.section || null,
       duration: sessionData.duration,
       notes: sessionData.notes || null,
       timestamp: sessionData.timestamp,
@@ -289,6 +294,49 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
       }
     }
     setPrefilledDuration(null)
+  }, [isOfflineMode, user])
+
+  const handleUpdateSession = useCallback(async (id: string, updates: Partial<StudySession>) => {
+    // Optimistic UI update
+    setSessions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
+    )
+
+    if (isOfflineMode) {
+      if (user) {
+        const stored = localStorage.getItem(`studylog_sessions_${user.id}`)
+        if (stored) {
+          try {
+            const list: StudySession[] = JSON.parse(stored)
+            const updated = list.map((s) => (s.id === id ? { ...s, ...updates } : s))
+            localStorage.setItem(`studylog_sessions_${user.id}`, JSON.stringify(updated))
+          } catch (e) {
+            console.error('Failed to update local session storage', e)
+          }
+        }
+      }
+    } else {
+      try {
+        const { error } = await supabase
+          .from('study_sessions')
+          .update(updates)
+          .eq('id', id)
+        if (error) throw error
+      } catch (err) {
+        console.error('Failed to update session in Supabase, saving to local cache', err)
+        setIsOfflineMode(true)
+        if (user) {
+          const stored = localStorage.getItem(`studylog_sessions_${user.id}`)
+          if (stored) {
+            try {
+              const list: StudySession[] = JSON.parse(stored)
+              const updated = list.map((s) => (s.id === id ? { ...s, ...updates } : s))
+              localStorage.setItem(`studylog_sessions_${user.id}`, JSON.stringify(updated))
+            } catch {}
+          }
+        }
+      }
+    }
   }, [isOfflineMode, user])
 
   const handleDeleteSession = async (id: string) => {
@@ -534,6 +582,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
         prefilledDuration,
         setPrefilledDuration,
         handleAddSession,
+        handleUpdateSession,
         handleDeleteSession,
         handleAddNote,
         handleUpdateNoteState,
