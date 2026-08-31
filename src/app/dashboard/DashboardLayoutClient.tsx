@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -29,6 +29,19 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
   const { profile, user, authLoading } = useDashboard()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
+  // Close mobile menu on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsMobileMenuOpen(false)
+      }
+    }
+    if (isMobileMenuOpen) {
+      window.addEventListener('keydown', handleKeyDown)
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isMobileMenuOpen])
+
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.push('/login')
@@ -47,17 +60,32 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
   const initial = (displayName.charAt(0) || 'S').toUpperCase()
 
   const sidebarContent = (
-    <div className="flex flex-col justify-between h-full p-4.5 bg-theme-sidebar text-theme-text border-r border-theme-border select-none transition-colors duration-200">
+    <div className="flex flex-col justify-between h-full p-4.5 bg-theme-sidebar text-theme-text select-none transition-colors duration-200 overflow-y-auto">
       {/* Brand Header */}
       <div className="space-y-6">
-        <Link href="/dashboard" className="flex items-center gap-3 px-2 py-1 group">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-violet-500 flex items-center justify-center text-white shadow-md shadow-purple-500/20 group-hover:opacity-95 transition-opacity">
-            <BookOpen className="h-4 w-4" />
-          </div>
-          <span className="font-display font-medium text-theme-text text-lg tracking-tight">
-            studylog
-          </span>
-        </Link>
+        <div className="flex items-center justify-between px-2 py-1">
+          <Link
+            href="/dashboard"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="flex items-center gap-3 group"
+          >
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-violet-500 flex items-center justify-center text-white shadow-md shadow-purple-500/20 group-hover:opacity-95 transition-opacity">
+              <BookOpen className="h-4 w-4" />
+            </div>
+            <span className="font-display font-medium text-theme-text text-lg tracking-tight">
+              studylog
+            </span>
+          </Link>
+
+          {/* Close button inside mobile drawer */}
+          <button
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="md:hidden p-1.5 text-theme-muted hover:text-theme-text rounded-lg transition-colors"
+            aria-label="Close navigation menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
         {/* Navigation Items */}
         <nav className="space-y-1.5">
@@ -74,7 +102,7 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                   isActive
-                    ? 'bg-purple-600/20 text-purple-400 dark:text-purple-300 border border-purple-500/40 shadow-sm'
+                    ? 'bg-purple-600/20 text-purple-400 dark:text-purple-300 border border-purple-500/40 shadow-sm font-semibold'
                     : 'text-theme-muted hover:text-theme-text hover:bg-theme-card'
                 }`}
               >
@@ -87,9 +115,13 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
       </div>
 
       {/* Bottom Area: User Profile Row */}
-      <div className="pt-4 border-t border-theme-border">
+      <div className="pt-4 border-t border-theme-border mt-auto">
         <div className="flex items-center justify-between px-2 py-1.5 rounded-xl hover:bg-theme-card transition-colors cursor-pointer group">
-          <Link href="/dashboard/settings" className="flex items-center gap-3 flex-1 min-w-0">
+          <Link
+            href="/dashboard/settings"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="flex items-center gap-3 flex-1 min-w-0"
+          >
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shadow-sm shrink-0">
               {initial}
             </div>
@@ -114,9 +146,9 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
   )
 
   return (
-    <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col md:flex-row overflow-x-hidden font-sans transition-colors duration-200">
-      {/* ── Mobile Top Header Bar ── */}
-      <div className="md:hidden flex items-center justify-between p-4 border-b border-theme-border bg-theme-sidebar/95 backdrop-blur-md sticky top-0 z-40">
+    <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col font-sans transition-colors duration-200">
+      {/* ── Mobile Top Header Bar with 3-Line Hamburger Trigger ── */}
+      <header className="md:hidden flex items-center justify-between p-4 border-b border-theme-border bg-theme-sidebar/95 backdrop-blur-md sticky top-0 z-40">
         <Link href="/dashboard" className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 via-purple-500 to-violet-500 flex items-center justify-center text-white shadow-sm">
             <BookOpen className="h-3.5 w-3.5" />
@@ -125,34 +157,35 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
         </Link>
 
         <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 text-theme-muted hover:text-theme-text rounded-lg"
-          aria-label="Toggle navigation"
+          onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+          className="p-2 text-theme-muted hover:text-theme-text hover:bg-theme-card rounded-xl border border-transparent hover:border-theme-border transition-all active:scale-95"
+          aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          aria-expanded={isMobileMenuOpen}
         >
           {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
-      </div>
+      </header>
 
       {/* ── Mobile Drawer Overlay ── */}
       {isMobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <div className="relative w-72 h-full z-10">
+          <div className="relative w-72 h-full z-10 bg-theme-sidebar border-r border-theme-border shadow-2xl animate-in slide-in-from-left duration-200 flex flex-col">
             {sidebarContent}
           </div>
         </div>
       )}
 
-      {/* ── Persistent Desktop Left Sidebar ── */}
-      <aside className="hidden md:flex flex-col w-64 shrink-0 h-screen sticky top-0 z-30">
+      {/* ── Persistent Desktop Left Sidebar (Fixed to Viewport) ── */}
+      <aside className="hidden md:flex flex-col fixed inset-y-0 left-0 w-64 z-30 bg-theme-sidebar border-r border-theme-border h-screen">
         {sidebarContent}
       </aside>
 
-      {/* ── Main Canvas ── */}
-      <main className="flex-1 min-w-0 bg-theme-bg p-4 sm:p-6 lg:p-8 overflow-y-auto transition-colors duration-200">
+      {/* ── Main Canvas (Padded by sidebar width on desktop) ── */}
+      <main className="flex-1 min-w-0 md:pl-64 bg-theme-bg p-4 sm:p-6 lg:p-8 transition-colors duration-200">
         {authLoading ? (
           <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-purple-500" />
