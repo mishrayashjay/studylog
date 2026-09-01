@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { StudySession, useDashboard } from '@/context/DashboardContext'
 import {
   Search,
@@ -14,8 +14,10 @@ import {
   X,
   ChevronDown,
   Tag,
-  AlertTriangle
+  AlertTriangle,
+  FileText
 } from 'lucide-react'
+import CustomSelect from '@/components/CustomSelect'
 
 interface SessionHistoryProps {
   sessions: StudySession[]
@@ -23,7 +25,13 @@ interface SessionHistoryProps {
 }
 
 export default function SessionHistory({ sessions, onDeleteSession }: SessionHistoryProps) {
-  const { customSubjects, addCustomSubject, handleUpdateSession } = useDashboard()
+  const {
+    allSubjects,
+    addCustomSubject,
+    handleUpdateSession,
+    handleSaveSectionNote,
+    handleGetSectionNote
+  } = useDashboard()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
@@ -32,6 +40,12 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
   const [openSectionDropdownId, setOpenSectionDropdownId] = useState<string | null>(null)
   const [isCreatingNewSection, setIsCreatingNewSection] = useState(false)
   const [newSectionName, setNewSectionName] = useState('')
+
+  // Section Notes Modal State
+  const [activeSectionForNotes, setActiveSectionForNotes] = useState<string | null>(null)
+  const [sectionNoteContent, setSectionNoteContent] = useState('')
+  const [isSavingSectionNote, setIsSavingSectionNote] = useState(false)
+  const [sectionNoteNotification, setSectionNoteNotification] = useState<string | null>(null)
 
   // Custom In-App Delete Confirmation Modal State
   const [sessionToDelete, setSessionToDelete] = useState<StudySession | null>(null)
@@ -52,10 +66,13 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Close delete modal on Escape key
+  // Close modals on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        if (activeSectionForNotes) {
+          setActiveSectionForNotes(null)
+        }
         if (sessionToDelete) {
           setSessionToDelete(null)
         }
@@ -67,18 +84,10 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [sessionToDelete, openSectionDropdownId])
+  }, [sessionToDelete, openSectionDropdownId, activeSectionForNotes])
 
-  // Available sections list across the app
-  const availableSections = useMemo(() => {
-    const set = new Set<string>()
-    customSubjects.forEach((s) => s && s.trim() && set.add(s.trim()))
-    sessions.forEach((s) => {
-      if (s.section && s.section.trim()) set.add(s.section.trim())
-      if (s.subject && s.subject.trim()) set.add(s.subject.trim())
-    })
-    return Array.from(set).sort()
-  }, [customSubjects, sessions])
+  // Unified available sections/subjects list across the entire app
+  const availableSections = allSubjects
 
   const formatDateTime = (isoString: string) => {
     const date = new Date(isoString)
@@ -124,6 +133,30 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
     setNewSectionName('')
   }
 
+  // Open Section Notes Modal for a given section name
+  const openSectionNoteModal = (sectionName: string) => {
+    const existing = handleGetSectionNote(sectionName)
+    setSectionNoteContent(existing)
+    setActiveSectionForNotes(sectionName)
+    setOpenSectionDropdownId(null)
+  }
+
+  // Save Section Notes
+  const handleSaveActiveSectionNote = async () => {
+    if (!activeSectionForNotes) return
+    setIsSavingSectionNote(true)
+    try {
+      await handleSaveSectionNote(activeSectionForNotes, sectionNoteContent)
+      setSectionNoteNotification(`Saved notes for ${activeSectionForNotes}!`)
+      setTimeout(() => {
+        setSectionNoteNotification(null)
+        setActiveSectionForNotes(null)
+      }, 700)
+    } finally {
+      setIsSavingSectionNote(false)
+    }
+  }
+
   // Handle executing delete
   const handleConfirmDelete = async () => {
     if (!sessionToDelete) return
@@ -164,51 +197,52 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
   return (
     <div className="bg-theme-card p-5 sm:p-6 rounded-2xl border border-theme-border shadow-sm transition-colors duration-200">
       {/* Header and Controls */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme-border pb-4 mb-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-theme-border pb-4 mb-5">
         <div>
-          <h2 className="text-lg font-bold text-theme-text font-display">Study History</h2>
-          <p className="text-theme-muted text-xs mt-0.5">
-            View, search, assign sections, and filter your logged study sessions.
+          <h2 className="text-lg sm:text-xl font-bold text-theme-text font-display">Study History</h2>
+          <p className="text-theme-muted text-xs sm:text-sm mt-0.5 leading-relaxed">
+            View, search, assign sections, write per-section notes, and filter your logged study sessions.
           </p>
         </div>
 
         {/* Filter Inputs */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Text Search */}
+        <div className="flex flex-col sm:flex-row gap-2.5 sm:items-center">
+          {/* Text Search - Sized and padded so placeholder never clips */}
           <div className="relative">
             <input
               type="text"
               placeholder="Search by subject, section, notes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full sm:w-64 pl-9 pr-3.5 py-1.5 border border-theme-border rounded-xl focus:outline-none focus:border-purple-500 bg-theme-subtle text-theme-text placeholder:text-theme-muted text-xs transition-colors duration-200"
+              className="w-full sm:w-80 pl-9 pr-3.5 py-2 border border-theme-border rounded-xl focus:outline-none focus:border-purple-500 bg-theme-subtle text-theme-text placeholder:text-theme-muted text-xs sm:text-sm transition-colors duration-200 shadow-2xs"
             />
             <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-theme-muted" />
           </div>
 
-          {/* Date Filter Dropdown */}
-          <div className="relative">
-            <select
+          {/* Date Filter CustomSelect */}
+          <div className="w-full sm:w-44">
+            <CustomSelect
               value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value as 'all' | 'today' | 'week' | 'month')}
-              className="w-full sm:w-40 pl-9 pr-8 py-1.5 border border-theme-border rounded-xl focus:outline-none focus:border-purple-500 bg-theme-subtle text-theme-text text-xs appearance-none cursor-pointer font-medium transition-colors duration-200"
-            >
-              <option value="all">All History</option>
-              <option value="today">Today</option>
-              <option value="week">Last 7 Days</option>
-              <option value="month">This Month</option>
-            </select>
-            <Calendar className="absolute left-3 top-2.5 h-3.5 w-3.5 text-theme-muted pointer-events-none" />
-            <ChevronDown className="absolute right-3 top-2.5 h-3.5 w-3.5 text-theme-muted pointer-events-none" />
+              onChange={(val) => setDateFilter(val as 'all' | 'today' | 'week' | 'month')}
+              options={[
+                { value: 'all', label: 'All History' },
+                { value: 'today', label: 'Today' },
+                { value: 'week', label: 'Last 7 Days' },
+                { value: 'month', label: 'This Month' },
+              ]}
+              prefixIcon={<Calendar className="h-3.5 w-3.5" />}
+              className="py-2 px-3 text-xs sm:text-sm font-medium"
+              aria-label="Filter study sessions by date"
+            />
           </div>
         </div>
       </div>
 
       {/* History List */}
       {filteredSessions.length === 0 ? (
-        <div className="py-12 text-center text-theme-muted text-sm flex flex-col items-center justify-center gap-2">
+        <div className="py-12 text-center text-theme-muted text-sm sm:text-base flex flex-col items-center justify-center gap-2.5">
           <AlertCircle className="h-8 w-8 text-theme-border" />
-          <p>No study sessions found matching your criteria.</p>
+          <p className="font-medium text-theme-muted">No study sessions found matching your criteria.</p>
         </div>
       ) : (
         <div className="divide-y divide-theme-border max-h-[560px] overflow-y-auto pr-1">
@@ -218,7 +252,7 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
             return (
               <div
                 key={session.id}
-                className="py-4 first:pt-0 last:pb-0 flex items-start justify-between gap-4 group transition-colors"
+                className="py-4 first:pt-0 last:pb-0 flex items-start justify-between gap-3.5 group transition-colors"
               >
                 <div className="space-y-2 min-w-0 flex-1">
                   {/* Subject & Time */}
@@ -226,35 +260,50 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
                     <span className="font-bold text-theme-text truncate text-sm sm:text-base">
                       {session.subject}
                     </span>
-                    <span className="text-[11px] font-semibold text-theme-muted">
+                    <span className="text-xs font-semibold text-theme-muted">
                       {formatDateTime(session.timestamp)}
                     </span>
                   </div>
 
-                  {/* Badges Row: Duration + Interactive Section Tag */}
+                  {/* Badges Row: Duration + Interactive Section Tag + Section Notes Icon */}
                   <div className="flex flex-wrap items-center gap-2">
                     {/* Duration Badge */}
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full w-fit border border-indigo-500/20">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full w-fit border border-indigo-500/20 shadow-2xs">
                       <Clock className="h-3 w-3" />
                       <span>{formatDurationDetailed(session.duration)}</span>
                     </div>
 
                     {/* Section Assignment Pill & Popover Dropdown */}
-                    <div className="relative">
+                    <div className="relative flex items-center gap-1.5">
                       {session.section ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setOpenSectionDropdownId(isDropdownOpen ? null : session.id)
-                            setIsCreatingNewSection(false)
-                          }}
-                          className="flex items-center gap-1.5 text-xs font-medium text-purple-400 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/25 px-2.5 py-0.5 rounded-full transition-all cursor-pointer group/sec"
-                          title="Click to change section"
-                        >
-                          <Folder className="h-3 w-3" />
-                          <span className="truncate max-w-[140px] sm:max-w-[200px]">{session.section}</span>
-                          <ChevronDown className="h-3 w-3 opacity-60 group-hover/sec:opacity-100" />
-                        </button>
+                        <div className="flex items-center gap-1 bg-purple-500/10 border border-purple-500/25 rounded-full pl-2.5 pr-1 py-0.5 shadow-2xs">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOpenSectionDropdownId(isDropdownOpen ? null : session.id)
+                              setIsCreatingNewSection(false)
+                            }}
+                            className="flex items-center gap-1.5 text-xs font-medium text-purple-400 hover:text-purple-300 transition-colors cursor-pointer"
+                            title="Click to change section"
+                          >
+                            <Folder className="h-3 w-3" />
+                            <span className="truncate max-w-[130px] sm:max-w-[180px]">{session.section}</span>
+                            <ChevronDown className="h-3 w-3 opacity-60" />
+                          </button>
+
+                          {/* Dedicated Per-Section Notes Trigger Button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openSectionNoteModal(session.section!)
+                            }}
+                            className="p-1 text-purple-400 hover:text-purple-300 hover:bg-purple-500/20 rounded-full transition-colors cursor-pointer"
+                            title={`Open ${session.section} Notes`}
+                          >
+                            <FileText className="h-3 w-3" />
+                          </button>
+                        </div>
                       ) : (
                         <button
                           type="button"
@@ -262,7 +311,7 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
                             setOpenSectionDropdownId(isDropdownOpen ? null : session.id)
                             setIsCreatingNewSection(false)
                           }}
-                          className="flex items-center gap-1 text-xs font-medium text-theme-muted hover:text-purple-400 bg-theme-subtle hover:bg-purple-500/10 border border-dashed border-theme-border hover:border-purple-500/30 px-2.5 py-0.5 rounded-full transition-all cursor-pointer"
+                          className="flex items-center gap-1.5 text-xs font-medium text-theme-muted hover:text-purple-400 bg-theme-subtle hover:bg-purple-500/10 border border-dashed border-theme-border hover:border-purple-500/30 px-2.5 py-0.5 rounded-full transition-all cursor-pointer shadow-2xs"
                         >
                           <Tag className="h-3 w-3" />
                           <span>+ Assign Section</span>
@@ -273,9 +322,9 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
                       {isDropdownOpen && (
                         <div
                           ref={dropdownRef}
-                          className="absolute left-0 top-full mt-1.5 z-40 w-64 bg-theme-card border border-theme-border rounded-xl shadow-xl p-2 space-y-1.5 animate-in fade-in zoom-in-95"
+                          className="absolute left-0 top-full mt-1.5 z-40 w-72 bg-theme-card border border-theme-border rounded-xl shadow-2xl p-2.5 space-y-2 animate-in fade-in zoom-in-95"
                         >
-                          <div className="flex items-center justify-between px-2 py-1 border-b border-theme-border text-[10px] font-bold uppercase tracking-wider text-theme-muted">
+                          <div className="flex items-center justify-between px-2 py-1 border-b border-theme-border text-xs font-bold uppercase tracking-wider text-theme-muted">
                             <span>Assign Section</span>
                             <button
                               type="button"
@@ -283,7 +332,7 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
                                 setOpenSectionDropdownId(null)
                                 setIsCreatingNewSection(false)
                               }}
-                              className="text-theme-muted hover:text-theme-text"
+                              className="text-theme-muted hover:text-theme-text p-0.5"
                             >
                               <X className="h-3 w-3" />
                             </button>
@@ -294,7 +343,7 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
                             <div className="p-1 space-y-2 animate-in fade-in duration-200">
                               <input
                                 type="text"
-                                placeholder="Section / topic name..."
+                                placeholder="Type section name (e.g. DSA)..."
                                 value={newSectionName}
                                 onChange={(e) => setNewSectionName(e.target.value)}
                                 autoFocus
@@ -312,14 +361,14 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
                                     setIsCreatingNewSection(false)
                                     setNewSectionName('')
                                   }}
-                                  className="px-2.5 py-1 text-[11px] font-semibold text-theme-muted hover:text-theme-text"
+                                  className="px-2.5 py-1 text-xs font-semibold text-theme-muted hover:text-theme-text"
                                 >
                                   Cancel
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleCreateAndAssignSection(session.id)}
-                                  className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-semibold rounded-lg shadow-xs"
+                                  className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg shadow-xs"
                                 >
                                   Save & Assign
                                 </button>
@@ -339,29 +388,57 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
                               )}
 
                               {/* List of existing sections */}
-                              <div className="max-h-36 overflow-y-auto space-y-0.5 pr-0.5">
-                                {availableSections.map((sec) => {
-                                  const isSelected = session.section === sec
-                                  return (
-                                    <button
-                                      key={sec}
-                                      type="button"
-                                      onClick={() => handleAssignSection(session.id, sec)}
-                                      className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center justify-between ${
-                                        isSelected
-                                          ? 'bg-purple-600/20 text-purple-300'
-                                          : 'text-theme-text hover:bg-theme-subtle'
-                                      }`}
-                                    >
-                                      <span className="truncate">{sec}</span>
-                                      {isSelected && <Check className="h-3 w-3 text-purple-400 shrink-0" />}
-                                    </button>
-                                  )
-                                })}
+                              <div className="max-h-44 overflow-y-auto space-y-1 pr-0.5">
+                                {availableSections.length === 0 ? (
+                                  <p className="px-2 py-2 text-xs text-theme-muted italic">
+                                    No sections created yet. Use &ldquo;+ Create new section&rdquo; below.
+                                  </p>
+                                ) : (
+                                  availableSections.map((sec) => {
+                                    const isSelected = session.section === sec
+                                    return (
+                                       <div
+                                         key={sec}
+                                         className={`group/secitem w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                           isSelected
+                                             ? 'bg-purple-600 text-white font-semibold shadow-xs'
+                                             : 'text-theme-text hover:bg-theme-subtle hover:text-theme-text'
+                                         }`}
+                                       >
+                                         <button
+                                           type="button"
+                                           onClick={() => handleAssignSection(session.id, sec)}
+                                           className="flex-1 text-left flex items-center gap-2 truncate cursor-pointer"
+                                         >
+                                           <Folder className={`h-3 w-3 shrink-0 ${isSelected ? 'text-white' : 'text-purple-400'}`} />
+                                           <span className="truncate">{sec}</span>
+                                           {isSelected && <Check className="h-3 w-3 text-white shrink-0 ml-1" />}
+                                         </button>
+
+                                         {/* Notes icon button next to each section in dropdown */}
+                                         <button
+                                           type="button"
+                                           onClick={(e) => {
+                                              e.stopPropagation()
+                                              openSectionNoteModal(sec)
+                                           }}
+                                           className={`p-1 rounded-md transition-colors shrink-0 ml-1.5 cursor-pointer ${
+                                             isSelected
+                                               ? 'text-white/80 hover:text-white hover:bg-white/20'
+                                               : 'text-theme-muted hover:text-purple-400 hover:bg-purple-500/10'
+                                           }`}
+                                           title={`View/Edit ${sec} Notes`}
+                                         >
+                                           <FileText className="h-3.5 w-3.5" />
+                                         </button>
+                                       </div>
+                                    )
+                                  })
+                                )}
                               </div>
 
                               {/* Create New Section Option */}
-                              <div className="border-t border-theme-border pt-1">
+                              <div className="border-t border-theme-border pt-1.5">
                                 <button
                                   type="button"
                                   onClick={() => setIsCreatingNewSection(true)}
@@ -378,9 +455,9 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
                     </div>
                   </div>
 
-                  {/* Notes */}
+                  {/* Session Notes */}
                   {session.notes && (
-                    <p className="text-theme-muted text-xs leading-relaxed italic bg-theme-subtle p-2.5 rounded-xl border border-theme-border max-w-2xl mt-1">
+                    <p className="text-theme-muted/90 text-xs sm:text-sm leading-relaxed italic bg-theme-subtle p-2.5 rounded-xl border border-theme-border max-w-2xl mt-1">
                       {session.notes}
                     </p>
                   )}
@@ -390,7 +467,7 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
                 <button
                   type="button"
                   onClick={() => setSessionToDelete(session)}
-                  className="p-2 border border-transparent hover:border-red-500/20 hover:bg-red-500/10 text-theme-muted hover:text-red-400 rounded-xl transition-all shrink-0 opacity-80 group-hover:opacity-100 focus:opacity-100"
+                  className="p-2 border border-transparent hover:border-red-500/20 hover:bg-red-500/10 text-theme-muted hover:text-red-400 rounded-xl transition-all shrink-0 opacity-80 group-hover:opacity-100 focus:opacity-100 cursor-pointer"
                   title="Delete Study Log"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -398,6 +475,91 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          PER-SECTION NOTES MODAL (Persistent across all sessions)
+          ═══════════════════════════════════════════════════════════ */}
+      {activeSectionForNotes && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => setActiveSectionForNotes(null)}
+        >
+          <div
+            className="w-full max-w-lg bg-theme-card border border-theme-border rounded-2xl p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3 border-b border-theme-border pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center shrink-0">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-theme-text font-display flex items-center gap-2">
+                    <span>{activeSectionForNotes}</span>
+                    <span className="text-[10px] font-semibold text-purple-400 font-sans px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20">
+                      Section Notes
+                    </span>
+                  </h3>
+                  <p className="text-xs text-theme-muted mt-0.5 leading-relaxed">
+                    Persistent takeaways, formulas, and resources for this entire section.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveSectionForNotes(null)}
+                className="p-1.5 text-theme-muted hover:text-theme-text rounded-lg transition-colors cursor-pointer"
+                aria-label="Close section notes"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Textarea */}
+            <div className="space-y-1.5">
+              <textarea
+                rows={7}
+                placeholder={`Write persistent reference notes, formulas, or reminders for ${activeSectionForNotes}...`}
+                value={sectionNoteContent}
+                onChange={(e) => setSectionNoteContent(e.target.value)}
+                autoFocus
+                className="w-full p-3.5 bg-theme-subtle border border-theme-border rounded-xl text-xs sm:text-sm text-theme-text placeholder:text-theme-muted focus:outline-none focus:border-purple-500 resize-none leading-relaxed transition-colors"
+              />
+              <div className="flex items-center justify-between text-xs text-theme-muted px-1">
+                <span>{sectionNoteContent.length} characters</span>
+                {sectionNoteNotification && (
+                  <span className="text-emerald-400 font-semibold animate-fade-in flex items-center gap-1">
+                    <Check className="h-3.5 w-3.5" />
+                    <span>{sectionNoteNotification}</span>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-theme-border">
+              <button
+                type="button"
+                onClick={() => setActiveSectionForNotes(null)}
+                disabled={isSavingSectionNote}
+                className="px-4 py-2 rounded-xl bg-theme-subtle hover:bg-theme-border border border-theme-border text-theme-text text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveActiveSectionNote}
+                disabled={isSavingSectionNote}
+                className="px-4.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-md shadow-purple-600/25 flex items-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+              >
+                <Check className="h-3.5 w-3.5" />
+                <span>{isSavingSectionNote ? 'Saving...' : 'Save Section Notes'}</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -422,7 +584,7 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
                 <h3 className="text-base font-bold text-theme-text font-display">
                   Delete Study Session?
                 </h3>
-                <p className="text-xs text-theme-muted leading-relaxed">
+                <p className="text-xs sm:text-sm text-theme-muted leading-relaxed">
                   Are you sure you want to delete this study session for{' '}
                   <span className="font-semibold text-theme-text">&ldquo;{sessionToDelete.subject}&rdquo;</span>{' '}
                   ({formatDurationDetailed(sessionToDelete.duration)})? This action cannot be undone.
@@ -436,7 +598,7 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
                 type="button"
                 onClick={() => setSessionToDelete(null)}
                 disabled={isDeleting}
-                className="px-4 py-2 rounded-xl bg-theme-subtle hover:bg-theme-border border border-theme-border text-theme-text text-xs font-semibold transition-colors disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-theme-subtle hover:bg-theme-border border border-theme-border text-theme-text text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
               >
                 Cancel
               </button>
@@ -444,7 +606,7 @@ export default function SessionHistory({ sessions, onDeleteSession }: SessionHis
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={isDeleting}
-                className="px-4.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold shadow-md shadow-red-600/25 flex items-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50"
+                className="px-4.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold shadow-md shadow-red-600/25 flex items-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 <span>{isDeleting ? 'Deleting...' : 'Delete Session'}</span>

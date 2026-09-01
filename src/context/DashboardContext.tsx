@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useMemo, ReactNode, useCallback } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import type { User } from '@supabase/supabase-js'
 
@@ -24,6 +24,15 @@ export interface Note {
   updated_at: string
 }
 
+export interface SectionNote {
+  id: string
+  user_id: string
+  section_name: string
+  content: string
+  created_at: string
+  updated_at: string
+}
+
 export interface ActiveTimerState {
   isRunning: boolean
   seconds: number
@@ -41,8 +50,12 @@ interface DashboardContextType {
   }
   sessions: StudySession[]
   notes: Note[]
+  sectionNotes: SectionNote[]
   customSubjects: string[]
+  allSubjects: string[]
   addCustomSubject: (subject: string) => void
+  handleSaveSectionNote: (sectionName: string, content: string) => Promise<void>
+  handleGetSectionNote: (sectionName: string) => string
   isOfflineMode: boolean
   prefilledDuration: number | null
   setPrefilledDuration: (duration: number | null) => void
@@ -68,6 +81,11 @@ interface DashboardContextType {
   setTimerMode: (mode: 'stopwatch' | 'timer') => void
   setTimerTargetDuration: (duration: number) => void
   stopAndLogTimer: (notes?: string) => Promise<void>
+  updateUsername: (newUsername: string) => Promise<{ success: boolean; error?: string }>
+  updateFullName: (newFullName: string) => Promise<{ success: boolean; error?: string }>
+  requestEmailChange: (newEmail: string) => Promise<{ success: boolean; error?: string; message?: string }>
+  verifyEmailChangeOtp: (newEmail: string, token: string) => Promise<{ success: boolean; error?: string }>
+  refreshUser: () => Promise<void>
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined)
@@ -87,13 +105,6 @@ interface DashboardProviderProps {
 const supabase = createClient()
 
 export function DashboardProvider({ children }: DashboardProviderProps) {
-
-  const isSupabaseConfigured =
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.NEXT_PUBLIC_SUPABASE_URL !== 'your-supabase-project-url' &&
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'your-supabase-anon-key'
-
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<{ id: string; username: string; full_name: string | null }>({
     id: '',
@@ -102,141 +113,156 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
   })
   const [sessions, setSessions] = useState<StudySession[]>([])
   const [notes, setNotes] = useState<Note[]>([])
+  const [sectionNotes, setSectionNotes] = useState<SectionNote[]>([])
   const [customSubjects, setCustomSubjects] = useState<string[]>([])
-  const [isOfflineMode, setIsOfflineMode] = useState(!isSupabaseConfigured)
+  const [isOfflineMode, setIsOfflineMode] = useState(false)
   const [prefilledDuration, setPrefilledDuration] = useState<number | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
-
-  // Load custom subjects from localStorage on client mount
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('studylog_custom_subjects')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed)) {
-          setCustomSubjects(parsed)
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }, [])
 
   const addCustomSubject = useCallback((newSubject: string) => {
     const trimmed = newSubject.trim()
     if (!trimmed) return
     setCustomSubjects((prev) => {
-      if (prev.includes(trimmed)) return prev
-      const updated = [trimmed, ...prev]
-      try {
-        localStorage.setItem('studylog_custom_subjects', JSON.stringify(updated))
-      } catch {
-        // ignore
-      }
-      return updated
+      if (prev.some((s) => s.toLowerCase() === trimmed.toLowerCase())) return prev
+      return [trimmed, ...prev]
     })
   }, [])
 
-  // Fetch initial profile, study sessions, and notes from database exactly once on client mount
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        // Fetch user session first
-        const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser()
+  // ── Unified Master Subjects & Sections List Across Entire App ──
+  const allSubjects = useMemo(() => {
+    const set = new Set<string>()
+    customSubjects.forEach((s) => s && s.trim() && set.add(s.trim()))
+    sectionNotes.forEach((sn) => sn.section_name && sn.section_name.trim() && set.add(sn.section_name.trim()))
+    sessions.forEach((s) => {
+      if (s.subject && s.subject.trim()) set.add(s.subject.trim())
+      if (s.section && s.section.trim()) set.add(s.section.trim())
+    })
+    notes.forEach((n) => {
+      if (n.category && n.category.trim() && n.category.trim().toLowerCase() !== 'general') {
+        set.add(n.category.trim())
+      }
+    })
+    return Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+  }, [customSubjects, sectionNotes, sessions, notes])
 
-        if (userError || !currentUser) {
-          setUser(null)
-          setAuthLoading(false)
-          return
-        }
+  // ── Direct Supabase Data Fetching for Authenticated User ──
+  const fetchUserData = useCallback(async () => {
+    try {
+      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser()
 
-        setUser(currentUser)
-        setProfile((prev) => ({
-          ...prev,
-          id: currentUser.id,
-          username: currentUser.email?.split('@')[0] || 'user',
-        }))
-
-        if (isOfflineMode) {
-          setAuthLoading(false)
-          return
-        }
-
-        // Fetch profile
-        const { data: prof, error: profError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', currentUser.id)
-          .single()
-
-        if (!profError && prof) {
-          setProfile(prof)
-        }
-
-        // Fetch study history database
-        const { data: sess, error: sessError } = await supabase
-          .from('study_sessions')
-          .select('*')
-          .eq('user_id', currentUser.id)
-          .order('timestamp', { ascending: false })
-
-        if (!sessError && sess) {
-          setSessions(sess)
-        }
-
-        // Fetch study notes database
-        const { data: nts, error: ntsError } = await supabase
-          .from('notes')
-          .select('*')
-          .eq('user_id', currentUser.id)
-          .order('updated_at', { ascending: false })
-
-        if (!ntsError && nts) {
-          setNotes(nts)
-        }
-      } catch (err) {
-        console.error('Failed to load user credentials from Supabase.', err)
-        setIsOfflineMode(true)
-      } finally {
+      if (userError || !currentUser) {
+        setUser(null)
+        setProfile({ id: '', username: 'user', full_name: '' })
+        setSessions([])
+        setNotes([])
+        setSectionNotes([])
+        setCustomSubjects([])
         setAuthLoading(false)
+        return
       }
+
+      setUser(currentUser)
+      setProfile((prev) => ({
+        ...prev,
+        id: currentUser.id,
+        username: currentUser.email?.split('@')[0] || 'scholar',
+      }))
+
+      // Fetch remote profile
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single()
+
+      if (prof) {
+        setProfile(prof)
+      }
+
+      // Fetch study sessions directly from Supabase
+      const { data: sess, error: sessError } = await supabase
+        .from('study_sessions')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('timestamp', { ascending: false })
+
+      if (!sessError && sess) {
+        setSessions(sess)
+      }
+
+      // Fetch notes directly from Supabase
+      const { data: nts, error: ntsError } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('updated_at', { ascending: false })
+
+      let currentNotes: Note[] = []
+      if (!ntsError && nts) {
+        currentNotes = nts
+        setNotes(nts)
+      }
+
+      // Fetch section notes directly from Supabase
+      try {
+        const { data: secNotes, error: secNotesError } = await supabase
+          .from('section_notes')
+          .select('*')
+          .eq('user_id', currentUser.id)
+
+        if (!secNotesError && secNotes) {
+          setSectionNotes(secNotes)
+          // Ensure any existing section_notes appear in notes list
+          secNotes.forEach((sn) => {
+            if (
+              sn.section_name &&
+              !currentNotes.some(
+                (n) => n.category && n.category.trim().toLowerCase() === sn.section_name.trim().toLowerCase()
+              )
+            ) {
+              const autoNote: Note = {
+                id: sn.id || Math.random().toString(36).substr(2, 9),
+                user_id: currentUser.id,
+                title: `${sn.section_name} Notes`,
+                content: sn.content,
+                category: sn.section_name,
+                created_at: sn.created_at || new Date().toISOString(),
+                updated_at: sn.updated_at || new Date().toISOString(),
+              }
+              currentNotes.push(autoNote)
+            }
+          })
+          currentNotes.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+          setNotes([...currentNotes])
+        }
+      } catch {
+        // section_notes table may not exist yet
+      }
+
+      setIsOfflineMode(false)
+    } catch (err) {
+      console.error('Failed to load user data from Supabase:', err)
+      setIsOfflineMode(true)
+    } finally {
+      setAuthLoading(false)
     }
+  }, [])
 
-    fetchUserData()
-  }, [isOfflineMode])
-
-  // Sync state if offline mode cache takes over
+  // Initial fetch and subscribe to Supabase Auth State Changes
   useEffect(() => {
-    if (isOfflineMode && user) {
-      // Sync sessions
-      const storedSess = localStorage.getItem(`studylog_sessions_${user.id}`)
-      if (storedSess) {
-        try {
-          setSessions(JSON.parse(storedSess))
-        } catch (e) {
-          console.error('Failed to parse local sessions database', e)
-        }
-      }
+    fetchUserData()
 
-      // Sync notes
-      const storedNotes = localStorage.getItem(`studylog_notes_${user.id}`)
-      if (storedNotes) {
-        try {
-          setNotes(JSON.parse(storedNotes))
-        } catch (e) {
-          console.error('Failed to parse local notes database', e)
-        }
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      console.log('[Auth Listener] Supabase auth state change:', event)
+      fetchUserData()
+    })
+
+    return () => {
+      subscription.unsubscribe()
     }
-  }, [isOfflineMode, user])
+  }, [fetchUserData])
 
-  const saveSessions = (newSessions: StudySession[]) => {
-    setSessions(newSessions)
-    if (isOfflineMode && user) {
-      localStorage.setItem(`studylog_sessions_${user.id}`, JSON.stringify(newSessions))
-    }
-  }
-
+  // ── Session Handlers (Direct to Supabase) ──
   const handleAddSession = useCallback(async (sessionData: {
     subject: string
     section?: string | null
@@ -244,176 +270,112 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     notes: string
     timestamp: string
   }) => {
-    const newSessionItem: Omit<StudySession, 'id'> = {
-      user_id: user?.id || 'local-user',
-      subject: sessionData.subject,
-      section: sessionData.section || null,
-      duration: sessionData.duration,
-      notes: sessionData.notes || null,
-      timestamp: sessionData.timestamp,
+    if (!user) return
+
+    if (sessionData.subject) addCustomSubject(sessionData.subject)
+    if (sessionData.section) addCustomSubject(sessionData.section)
+
+    try {
+      const { data, error } = await supabase
+        .from('study_sessions')
+        .insert([{
+          user_id: user.id,
+          subject: sessionData.subject,
+          section: sessionData.section || null,
+          duration: sessionData.duration,
+          notes: sessionData.notes || null,
+          timestamp: sessionData.timestamp,
+        }])
+        .select()
+
+      if (error) throw error
+
+      if (data && data[0]) {
+        setSessions((prev) => [data[0], ...prev])
+      }
+    } catch (err) {
+      console.error('Failed to insert session into Supabase:', err)
+      throw err
     }
 
-    if (isOfflineMode) {
-      const sessionWithId: StudySession = {
-        ...newSessionItem,
-        id: Math.random().toString(36).substr(2, 9),
-      }
-      setSessions((prev) => {
-        const updated = [sessionWithId, ...prev]
-        if (user) {
-          localStorage.setItem(`studylog_sessions_${user.id}`, JSON.stringify(updated))
-        }
-        return updated
-      })
-    } else {
-      try {
-        const { data, error } = await supabase
-          .from('study_sessions')
-          .insert([newSessionItem])
-          .select()
-
-        if (error) throw error
-
-        if (data && data[0]) {
-          setSessions((prev) => [data[0], ...prev])
-        }
-      } catch (err) {
-        console.error('Failed to add session to Supabase, falling back to local storage', err)
-        setIsOfflineMode(true)
-        const sessionWithId: StudySession = {
-          ...newSessionItem,
-          id: Math.random().toString(36).substr(2, 9),
-        }
-        setSessions((prev) => {
-          const updated = [sessionWithId, ...prev]
-          if (user) {
-            localStorage.setItem(`studylog_sessions_${user.id}`, JSON.stringify(updated))
-          }
-          return updated
-        })
-      }
-    }
     setPrefilledDuration(null)
-  }, [isOfflineMode, user])
+  }, [user, addCustomSubject])
 
   const handleUpdateSession = useCallback(async (id: string, updates: Partial<StudySession>) => {
-    // Optimistic UI update
+    if (!user) return
+
+    if (updates.subject) addCustomSubject(updates.subject)
+    if (updates.section) addCustomSubject(updates.section)
+
     setSessions((prev) =>
       prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
     )
 
-    if (isOfflineMode) {
-      if (user) {
-        const stored = localStorage.getItem(`studylog_sessions_${user.id}`)
-        if (stored) {
-          try {
-            const list: StudySession[] = JSON.parse(stored)
-            const updated = list.map((s) => (s.id === id ? { ...s, ...updates } : s))
-            localStorage.setItem(`studylog_sessions_${user.id}`, JSON.stringify(updated))
-          } catch (e) {
-            console.error('Failed to update local session storage', e)
-          }
-        }
-      }
-    } else {
-      try {
-        const { error } = await supabase
-          .from('study_sessions')
-          .update(updates)
-          .eq('id', id)
-        if (error) throw error
-      } catch (err) {
-        console.error('Failed to update session in Supabase, saving to local cache', err)
-        setIsOfflineMode(true)
-        if (user) {
-          const stored = localStorage.getItem(`studylog_sessions_${user.id}`)
-          if (stored) {
-            try {
-              const list: StudySession[] = JSON.parse(stored)
-              const updated = list.map((s) => (s.id === id ? { ...s, ...updates } : s))
-              localStorage.setItem(`studylog_sessions_${user.id}`, JSON.stringify(updated))
-            } catch {}
-          }
-        }
-      }
-    }
-  }, [isOfflineMode, user])
+    try {
+      const { error } = await supabase
+        .from('study_sessions')
+        .update(updates)
+        .eq('id', id)
+        .eq('user_id', user.id)
 
-  const handleDeleteSession = async (id: string) => {
-    if (isOfflineMode) {
-      const updated = sessions.filter((s) => s.id !== id)
-      saveSessions(updated)
-    } else {
-      try {
-        const { error } = await supabase.from('study_sessions').delete().eq('id', id)
-        if (error) throw error
-        setSessions(sessions.filter((s) => s.id !== id))
-      } catch (err) {
-        console.error('Failed to delete session, falling back to local edit', err)
-        setIsOfflineMode(true)
-        const updated = sessions.filter((s) => s.id !== id)
-        saveSessions(updated)
-      }
+      if (error) throw error
+    } catch (err) {
+      console.error('Failed to update session in Supabase:', err)
+      throw err
     }
-  }
+  }, [user, addCustomSubject])
 
-  const handleAddNote = useCallback(async (title = 'Untitled Note', content = '', category = 'General') => {
-    const newNoteItem = {
-      user_id: user?.id || 'local-user',
-      title,
-      content,
-      category,
+  const handleDeleteSession = useCallback(async (id: string) => {
+    if (!user) return
+
+    setSessions((prev) => prev.filter((s) => s.id !== id))
+
+    try {
+      const { error } = await supabase
+        .from('study_sessions')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id)
+
+      if (error) throw error
+    } catch (err) {
+      console.error('Failed to delete session from Supabase:', err)
+      throw err
+    }
+  }, [user])
+
+  const handleAddNote = useCallback(async (title = 'Untitled Note', content = '', category = 'General'): Promise<Note> => {
+    if (!user) {
+      throw new Error('User must be authenticated to add notes')
     }
 
-    if (isOfflineMode) {
-      const noteWithId: Note = {
-        ...newNoteItem,
-        id: Math.random().toString(36).substr(2, 9),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }
-      setNotes((prev) => {
-        const updated = [noteWithId, ...prev]
-        if (user) {
-          localStorage.setItem(`studylog_notes_${user.id}`, JSON.stringify(updated))
-        }
-        return updated
-      })
-      return noteWithId
-    } else {
-      try {
-        const { data, error } = await supabase
-          .from('notes')
-          .insert([newNoteItem])
-          .select()
-
-        if (error) throw error
-
-        if (data && data[0]) {
-          setNotes((prev) => [data[0], ...prev])
-          return data[0]
-        }
-        throw new Error('Failed to insert note')
-      } catch (err) {
-        console.error('Failed to add note to Supabase, falling back to local storage', err)
-        setIsOfflineMode(true)
-        const noteWithId: Note = {
-          ...newNoteItem,
-          id: Math.random().toString(36).substr(2, 9),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }
-        setNotes((prev) => {
-          const updated = [noteWithId, ...prev]
-          if (user) {
-            localStorage.setItem(`studylog_notes_${user.id}`, JSON.stringify(updated))
-          }
-          return updated
-        })
-        throw err
-      }
+    if (category && category.trim() && category.trim().toLowerCase() !== 'general') {
+      addCustomSubject(category.trim())
     }
-  }, [isOfflineMode, user])
+
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .insert([{
+          user_id: user.id,
+          title,
+          content,
+          category,
+        }])
+        .select()
+
+      if (error) throw error
+
+      if (data && data[0]) {
+        setNotes((prev) => [data[0], ...prev])
+        return data[0]
+      }
+      throw new Error('Failed to create note in database')
+    } catch (err) {
+      console.error('Failed to insert note into Supabase:', err)
+      throw err
+    }
+  }, [user, addCustomSubject])
 
   const handleUpdateNoteState = useCallback((id: string, updates: Partial<Note>) => {
     const updatedTime = new Date().toISOString()
@@ -424,16 +386,12 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
 
     setNotes((prevNotes) => {
       const updatedNotes = prevNotes.map((n) => (n.id === id ? { ...n, ...fullUpdates } : n))
-      updatedNotes.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-      if (isOfflineMode && user) {
-        localStorage.setItem(`studylog_notes_${user.id}`, JSON.stringify(updatedNotes))
-      }
-      return updatedNotes
+      return updatedNotes.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
     })
-  }, [isOfflineMode, user])
+  }, [])
 
   const handleUpdateNote = useCallback(async (id: string, updates: Partial<Note>) => {
-    if (isOfflineMode) return
+    if (!user) return
 
     const updatedTime = new Date().toISOString()
     const fullUpdates = {
@@ -441,52 +399,43 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
       updated_at: updatedTime,
     }
 
+    setNotes((prevNotes) => {
+      const updatedNotes = prevNotes.map((n) => (n.id === id ? { ...n, ...fullUpdates } : n))
+      return updatedNotes.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+    })
+
     try {
       const { error } = await supabase
         .from('notes')
         .update(fullUpdates)
         .eq('id', id)
+        .eq('user_id', user.id)
 
       if (error) throw error
     } catch (err) {
-      console.error('Failed to update note in Supabase, falling back to local storage', err)
-      setIsOfflineMode(true)
-      setNotes((prevNotes) => {
-        if (user) {
-          localStorage.setItem(`studylog_notes_${user.id}`, JSON.stringify(prevNotes))
-        }
-        return prevNotes
-      })
+      console.error('Failed to update note in Supabase:', err)
       throw err
     }
-  }, [isOfflineMode, user])
+  }, [user])
 
   const handleDeleteNote = useCallback(async (id: string) => {
-    setNotes((prev) => {
-      const updated = prev.filter((n) => n.id !== id)
-      if (isOfflineMode && user) {
-        localStorage.setItem(`studylog_notes_${user.id}`, JSON.stringify(updated))
-      }
-      return updated
-    })
+    if (!user) return
 
-    if (!isOfflineMode) {
-      try {
-        const { error } = await supabase.from('notes').delete().eq('id', id)
-        if (error) throw error
-      } catch (err) {
-        console.error('Failed to delete note from Supabase, falling back to local storage', err)
-        setIsOfflineMode(true)
-        setNotes((prev) => {
-          if (user) {
-            localStorage.setItem(`studylog_notes_${user.id}`, JSON.stringify(prev))
-          }
-          return prev
-        })
-        throw err
-      }
+    setNotes((prev) => prev.filter((n) => n.id !== id))
+
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id)
+
+      if (error) throw error
+    } catch (err) {
+      console.error('Failed to delete note from Supabase:', err)
+      throw err
     }
-  }, [isOfflineMode, user])
+  }, [user])
 
   // ── Global Live Timer State ──
   const [timerState, setTimerState] = useState<ActiveTimerState>({
@@ -502,14 +451,10 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     let interval: NodeJS.Timeout | null = null
     if (timerState.isRunning) {
       interval = setInterval(() => {
-        setTimerState((prev) => {
-          const nextSecs = prev.seconds + 1
-          if (prev.mode === 'timer' && nextSecs >= prev.targetDuration) {
-            // Reached countdown target
-            return { ...prev, seconds: prev.targetDuration, isRunning: false }
-          }
-          return { ...prev, seconds: nextSecs }
-        })
+        setTimerState((prev) => ({
+          ...prev,
+          seconds: prev.seconds + 1,
+        }))
       }, 1000)
     }
     return () => {
@@ -559,7 +504,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     const duration = timerState.seconds
     const subject = timerState.subject || 'General Study'
     setTimerState((prev) => ({ ...prev, isRunning: false, seconds: 0 }))
-    if (duration > 0) {
+    if (duration > 0 && user) {
       await handleAddSession({
         subject,
         duration,
@@ -567,7 +512,317 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
         timestamp: new Date().toISOString(),
       })
     }
-  }, [timerState.seconds, timerState.subject, handleAddSession])
+  }, [timerState.seconds, timerState.subject, user, handleAddSession])
+
+  const handleSaveSectionNote = useCallback(async (sectionName: string, content: string) => {
+    if (!user) return
+    const trimmed = sectionName.trim()
+    if (!trimmed) return
+
+    addCustomSubject(trimmed)
+
+    const updatedTime = new Date().toISOString()
+
+    // 1. Check if a note already exists in unified notes matching this category/section
+    const existingNote = notes.find(
+      (n) =>
+        (n.category && n.category.trim().toLowerCase() === trimmed.toLowerCase()) ||
+        n.title.trim().toLowerCase() === `${trimmed.toLowerCase()} notes`
+    )
+
+    if (existingNote) {
+      handleUpdateNoteState(existingNote.id, {
+        content,
+        category: trimmed,
+        updated_at: updatedTime,
+      })
+      await handleUpdateNote(existingNote.id, {
+        content,
+        category: trimmed,
+        updated_at: updatedTime,
+      })
+    } else {
+      await handleAddNote(`${trimmed} Notes`, content, trimmed)
+    }
+
+    // 2. Also keep sectionNotes state in sync and persist to section_notes table
+    setSectionNotes((prev) => {
+      const existing = prev.find((sn) => sn.section_name.toLowerCase() === trimmed.toLowerCase())
+      if (existing) {
+        return prev.map((sn) =>
+          sn.section_name.toLowerCase() === trimmed.toLowerCase()
+            ? { ...sn, content, updated_at: updatedTime }
+            : sn
+        )
+      } else {
+        const newNote: SectionNote = {
+          id: Math.random().toString(36).substr(2, 9),
+          user_id: user.id,
+          section_name: trimmed,
+          content,
+          created_at: updatedTime,
+          updated_at: updatedTime,
+        }
+        return [newNote, ...prev]
+      }
+    })
+
+    try {
+      await supabase
+        .from('section_notes')
+        .upsert(
+          {
+            user_id: user.id,
+            section_name: trimmed,
+            content,
+            updated_at: updatedTime,
+          },
+          { onConflict: 'user_id,section_name' }
+        )
+    } catch {
+      // ignore if section_notes table is not present yet
+    }
+  }, [user, addCustomSubject, notes, handleUpdateNoteState, handleUpdateNote, handleAddNote])
+
+  const handleGetSectionNote = useCallback((sectionName: string): string => {
+    const trimmed = sectionName.trim().toLowerCase()
+    const foundNote = notes.find(
+      (n) =>
+        (n.category && n.category.trim().toLowerCase() === trimmed) ||
+        n.title.trim().toLowerCase() === `${trimmed} notes`
+    )
+    if (foundNote) return foundNote.content
+
+    const foundSec = sectionNotes.find((sn) => sn.section_name.toLowerCase() === trimmed)
+    return foundSec ? foundSec.content : ''
+  }, [notes, sectionNotes])
+
+  // ── Profile & Account Management ──
+  const refreshUser = useCallback(async () => {
+    try {
+      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser()
+      if (!userError && currentUser) {
+        setUser(currentUser)
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single()
+        if (prof) {
+          setProfile(prof)
+        } else {
+          setProfile({
+            id: currentUser.id,
+            username: currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'scholar',
+            full_name: currentUser.user_metadata?.full_name || null,
+          })
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  const updateUsername = useCallback(async (newUsername: string): Promise<{ success: boolean; error?: string }> => {
+    const trimmed = newUsername.trim()
+    if (!trimmed) {
+      return { success: false, error: 'Username cannot be empty.' }
+    }
+    if (trimmed.length < 3 || trimmed.length > 30) {
+      return { success: false, error: 'Username must be between 3 and 30 characters.' }
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(trimmed)) {
+      return { success: false, error: 'Username can only contain letters, numbers, and underscores.' }
+    }
+
+    if (!user) {
+      return { success: false, error: 'You must be signed in to update your username.' }
+    }
+
+    try {
+      // 1. Try updating existing row in profiles table
+      const { data: updateData, error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          username: trimmed,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id)
+        .select()
+
+      if (profileError) {
+        if (
+          profileError.code === '23505' ||
+          profileError.message?.toLowerCase().includes('unique') ||
+          profileError.message?.toLowerCase().includes('duplicate')
+        ) {
+          return { success: false, error: 'This username is already taken. Please choose another one.' }
+        }
+        return { success: false, error: profileError.message }
+      }
+
+      // If no row existed, insert a new profile row
+      if (!updateData || updateData.length === 0) {
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            username: trimmed,
+            full_name: profile.full_name || '',
+            updated_at: new Date().toISOString(),
+          })
+
+        if (insertError) {
+          if (
+            insertError.code === '23505' ||
+            insertError.message?.toLowerCase().includes('unique') ||
+            insertError.message?.toLowerCase().includes('duplicate')
+          ) {
+            return { success: false, error: 'This username is already taken. Please choose another one.' }
+          }
+          return { success: false, error: insertError.message }
+        }
+      }
+
+      // 2. Update user_metadata in Supabase Auth
+      await supabase.auth.updateUser({
+        data: {
+          username: trimmed,
+        },
+      })
+
+      // 3. Update local state immediately so all components across the app update in real time
+      setProfile((prev) => ({
+        ...prev,
+        username: trimmed,
+      }))
+
+      return { success: true }
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to update username.'
+      return { success: false, error: errorMsg }
+    }
+  }, [user, profile.full_name])
+
+  const updateFullName = useCallback(async (newFullName: string): Promise<{ success: boolean; error?: string }> => {
+    const trimmed = newFullName.trim()
+    if (!user) {
+      return { success: false, error: 'You must be signed in to update your profile.' }
+    }
+
+    try {
+      const { data: updateData, error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: trimmed,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id)
+        .select()
+
+      if (profileError) {
+        return { success: false, error: profileError.message }
+      }
+
+      if (!updateData || updateData.length === 0) {
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            username: profile.username || user.email?.split('@')[0] || 'scholar',
+            full_name: trimmed,
+            updated_at: new Date().toISOString(),
+          })
+
+        if (insertError) {
+          return { success: false, error: insertError.message }
+        }
+      }
+
+      await supabase.auth.updateUser({
+        data: {
+          full_name: trimmed,
+        },
+      })
+
+      setProfile((prev) => ({
+        ...prev,
+        full_name: trimmed,
+      }))
+
+      return { success: true }
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to update full name.'
+      return { success: false, error: errorMsg }
+    }
+  }, [user, profile.username])
+
+  const requestEmailChange = useCallback(async (newEmail: string): Promise<{ success: boolean; error?: string; message?: string }> => {
+    const trimmed = newEmail.trim().toLowerCase()
+    if (!trimmed) {
+      return { success: false, error: 'Email address cannot be empty.' }
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      return { success: false, error: 'Please enter a valid email address.' }
+    }
+    if (user && user.email && trimmed === user.email.toLowerCase()) {
+      return { success: false, error: 'The new email is the same as your current email.' }
+    }
+
+    if (!user) {
+      return { success: false, error: 'You must be signed in to change your email.' }
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser(
+        { email: trimmed },
+        { emailRedirectTo: `${window.location.origin}/auth/callback` }
+      )
+
+      if (error) {
+        return { success: false, error: error.message }
+      }
+
+      return {
+        success: true,
+        message: `Confirmation sent to ${trimmed}! Please enter the verification code or click the confirmation link in your email.`,
+      }
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to request email change.'
+      return { success: false, error: errorMsg }
+    }
+  }, [user])
+
+  const verifyEmailChangeOtp = useCallback(async (newEmail: string, token: string): Promise<{ success: boolean; error?: string }> => {
+    const trimmedEmail = newEmail.trim().toLowerCase()
+    const trimmedToken = token.trim()
+    if (!trimmedToken) {
+      return { success: false, error: 'Please enter the verification code.' }
+    }
+
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email: trimmedEmail,
+        token: trimmedToken,
+        type: 'email_change',
+      })
+
+      if (error) {
+        return { success: false, error: error.message }
+      }
+
+      // Refresh current user
+      const { data: userData, error: userError } = await supabase.auth.getUser()
+      if (!userError && userData?.user) {
+        setUser(userData.user)
+      }
+
+      return { success: true }
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to verify email change code.'
+      return { success: false, error: errorMsg }
+    }
+  }, [])
 
   return (
     <DashboardContext.Provider
@@ -576,8 +831,12 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
         profile,
         sessions,
         notes,
+        sectionNotes,
         customSubjects,
+        allSubjects,
         addCustomSubject,
+        handleSaveSectionNote,
+        handleGetSectionNote,
         isOfflineMode,
         prefilledDuration,
         setPrefilledDuration,
@@ -597,6 +856,11 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
         setTimerMode,
         setTimerTargetDuration,
         stopAndLogTimer,
+        updateUsername,
+        updateFullName,
+        requestEmailChange,
+        verifyEmailChangeOtp,
+        refreshUser,
       }}
     >
       {children}

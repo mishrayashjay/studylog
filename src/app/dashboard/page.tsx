@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   Trophy,
   Activity,
-  ChevronDown,
   Plus,
   Target,
   Layers,
@@ -25,6 +24,7 @@ import {
   Check
 } from 'lucide-react'
 import { useDashboard, StudySession } from '@/context/DashboardContext'
+import CustomSelect from '@/components/CustomSelect'
 
 const SUBJECT_COLORS = ['#8b5cf6', '#3b82f6', '#06b6d4', '#f59e0b', '#ec4899', '#10b981']
 
@@ -111,6 +111,8 @@ export default function DashboardOverviewPage() {
     sessions,
     profile,
     user,
+    allSubjects,
+    addCustomSubject,
     handleAddSession,
     timerState,
     startTimer,
@@ -184,16 +186,8 @@ export default function DashboardOverviewPage() {
   const [modalMinutes, setModalMinutes] = useState(60)
   const [isSubmittingSession, setIsSubmittingSession] = useState(false)
 
-  // ── Compute Real User Created Subjects (No hardcoded mock subjects) ──
-  const userSubjects = useMemo(() => {
-    const set = new Set<string>()
-    sessions.forEach(s => {
-      if (s.subject && s.subject.trim()) {
-        set.add(s.subject.trim())
-      }
-    })
-    return Array.from(set)
-  }, [sessions])
+  // ── Unified User Created Subjects (No hardcoded mock subjects) ──
+  const userSubjects = allSubjects
 
   // Current active chosen subject for new timers
   const activeFocusSubject = useMemo(() => {
@@ -204,9 +198,11 @@ export default function DashboardOverviewPage() {
 
   // Handle adding custom subject on the fly
   const handleApplyCustomSubject = () => {
-    if (customSubjectInput.trim()) {
-      setSelectedSubject(customSubjectInput.trim())
-      setTimerSubject(customSubjectInput.trim())
+    const trimmed = customSubjectInput.trim()
+    if (trimmed) {
+      addCustomSubject(trimmed)
+      setSelectedSubject(trimmed)
+      setTimerSubject(trimmed)
       setCustomSubjectInput('')
       setIsCreatingCustomSubject(false)
     }
@@ -217,6 +213,7 @@ export default function DashboardOverviewPage() {
     e.preventDefault()
     const subj = modalSubject.trim() || activeFocusSubject
     if (!subj || modalMinutes <= 0) return
+    addCustomSubject(subj)
     setIsSubmittingSession(true)
     try {
       await handleAddSession({
@@ -515,7 +512,7 @@ export default function DashboardOverviewPage() {
               aria-label="View full motivational quote"
               className="flex items-center gap-2 bg-theme-card hover:bg-theme-subtle border border-theme-border px-3.5 py-2.5 rounded-2xl text-xs text-theme-text shadow-xs max-w-xs cursor-pointer transition-all text-left"
             >
-              <span className="text-purple-400 font-serif text-base leading-none shrink-0">&ldquo;</span>
+              <span className="text-purple-400 text-base leading-none shrink-0 font-bold">&ldquo;</span>
               <div
                 className={`flex items-center gap-1.5 min-w-0 transition-opacity duration-300 ease-in-out ${
                   isQuoteVisible ? 'opacity-100' : 'opacity-0'
@@ -536,8 +533,8 @@ export default function DashboardOverviewPage() {
 
                 <div className="relative space-y-3">
                   <div className="flex items-start gap-2.5">
-                    <span className="text-purple-400 font-serif text-2xl leading-none shrink-0">&ldquo;</span>
-                    <p className="text-xs sm:text-sm italic text-theme-text leading-relaxed font-serif pt-0.5">
+                    <span className="text-purple-400 text-2xl leading-none shrink-0 font-bold">&ldquo;</span>
+                    <p className="text-xs sm:text-sm italic text-theme-text leading-relaxed pt-0.5">
                       {currentQuote.text}&rdquo;
                     </p>
                   </div>
@@ -654,18 +651,17 @@ export default function DashboardOverviewPage() {
                 <h2 className="text-base font-bold text-theme-text font-display">Study Overview</h2>
               </div>
 
-              <div className="relative">
-                <select
+              <div className="w-36">
+                <CustomSelect
                   value={timeFilter}
-                  onChange={(e) => setTimeFilter(e.target.value as 'This Week' | 'Last Week' | 'This Month')}
+                  onChange={(val) => setTimeFilter(val as 'This Week' | 'Last Week' | 'This Month')}
+                  options={[
+                    { value: 'This Week', label: 'This Week' },
+                    { value: 'Last Week', label: 'Last Week' },
+                    { value: 'This Month', label: 'This Month' },
+                  ]}
                   aria-label="Filter study overview time period"
-                  className="appearance-none bg-theme-subtle border border-theme-border text-theme-text text-xs font-medium px-3 py-1.5 pr-7 rounded-lg hover:border-purple-400/30 focus:outline-none cursor-pointer"
-                >
-                  <option value="This Week">This Week</option>
-                  <option value="Last Week">Last Week</option>
-                  <option value="This Month">This Month</option>
-                </select>
-                <ChevronDown className="h-3.5 w-3.5 text-theme-muted absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                />
               </div>
             </div>
 

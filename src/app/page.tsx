@@ -32,10 +32,10 @@ export default function Home() {
           <div className="relative flex gap-12 lg:gap-16 items-start">
 
             {/* Left sidebar index nav */}
-            <aside className="hidden lg:flex flex-col gap-8 shrink-0 w-[130px] sticky top-28 pt-2">
+            <aside className="hidden lg:flex flex-col gap-8 shrink-0 w-[150px] sticky top-28 pt-2">
               <div>
-                <p className="text-xs font-bold tracking-[0.18em] text-warmtext/30 dark:text-darktext/25 uppercase font-mono mb-3">Index</p>
-                <div className="w-5 h-px bg-warmtext/20 dark:bg-white/10" />
+                <p className="text-sm font-bold tracking-[0.2em] text-warmtext/50 dark:text-darktext/40 uppercase font-mono mb-3">Index</p>
+                <div className="w-6 h-px bg-warmtext/20 dark:bg-white/10" />
               </div>
               <nav className="flex flex-col gap-5">
                 {[
@@ -45,17 +45,17 @@ export default function Home() {
                   { num: "04", label: "History", href: "/login" },
                 ].map((item) => (
                   <Link key={item.num} href={item.href} className="group flex flex-col gap-0.5">
-                    <span className="text-[9px] font-mono text-warmtext/25 dark:text-darktext/25 tracking-widest">{item.num}</span>
-                    <span className="text-xs font-bold uppercase tracking-wider text-warmtext/45 dark:text-darktext/45 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-200">{item.label}</span>
+                    <span className="text-xs font-mono font-medium text-warmtext/40 dark:text-darktext/35 tracking-widest">{item.num}</span>
+                    <span className="text-sm font-bold uppercase tracking-wider text-warmtext/60 dark:text-darktext/60 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-200">{item.label}</span>
                   </Link>
                 ))}
               </nav>
               <div className="mt-auto">
-                <div className="w-5 h-px bg-warmtext/20 dark:bg-white/10 mb-3" />
-                <p className="text-[9px] font-mono tracking-[0.18em] text-warmtext/25 dark:text-darktext/25 uppercase mb-1.5">Status</p>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-xs font-bold text-warmtext/30 dark:text-darktext/30 uppercase tracking-wider">Live</span>
+                <div className="w-6 h-px bg-warmtext/20 dark:bg-white/10 mb-3" />
+                <p className="text-xs font-mono font-medium tracking-[0.2em] text-warmtext/40 dark:text-darktext/35 uppercase mb-1.5">Status</p>
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-sm font-bold text-warmtext/55 dark:text-darktext/50 uppercase tracking-wider">Live</span>
                 </div>
               </div>
             </aside>
@@ -65,9 +65,9 @@ export default function Home() {
 
               {/* Micro label row */}
               <div className="flex items-center gap-4 mb-8">
-                <span className="text-xs font-mono font-bold tracking-[0.22em] text-indigo-600 dark:text-indigo-400 uppercase">Study Session Tracker</span>
-                <div className="flex-1 h-px bg-warmtext/10 dark:bg-white/10 max-w-[80px]" />
-                <span className="text-xs font-mono tracking-[0.18em] text-warmtext/35 dark:text-darktext/30 uppercase">Focus · Streaks · History</span>
+                <span className="text-sm font-mono font-bold tracking-[0.22em] text-indigo-600 dark:text-indigo-400 uppercase">Study Session Tracker</span>
+                <div className="flex-1 h-px bg-warmtext/15 dark:bg-white/10 max-w-[80px]" />
+                <span className="text-sm font-mono font-semibold tracking-[0.18em] text-warmtext/50 dark:text-darktext/45 uppercase">Focus · Streaks · History</span>
               </div>
 
               {/* Headline */}
@@ -101,8 +101,8 @@ export default function Home() {
                     { value: "Free", label: "Open & Private" },
                   ].map((s) => (
                     <div key={s.label} className="flex flex-col items-start">
-                      <span className="text-2xl sm:text-3xl font-black text-warmtext dark:text-darktext font-display leading-none">{s.value}</span>
-                      <span className="mt-1.5 text-[9px] sm:text-[10px] font-mono font-bold tracking-[0.18em] text-warmtext/40 dark:text-darktext/35 uppercase">{s.label}</span>
+                      <span className="text-3xl sm:text-4xl font-black text-warmtext dark:text-darktext font-display leading-none">{s.value}</span>
+                      <span className="mt-2 text-xs font-mono font-bold tracking-[0.16em] text-warmtext/55 dark:text-darktext/50 uppercase">{s.label}</span>
                     </div>
                   ))}
                 </div>
@@ -160,7 +160,7 @@ export default function Home() {
           {/* Why I Built This */}
           <div className="mt-16 border-t border-warmborder/50 dark:border-white/10 pt-16 pb-12 max-w-2xl mx-auto text-center">
             <h2 className="font-bold text-2xl sm:text-3xl text-warmtext dark:text-darktext font-display">Why I Built This</h2>
-            <p className="mt-6 text-base sm:text-lg text-warmtext/70 dark:text-darktext/70 leading-relaxed font-serif italic max-w-xl mx-auto">
+            <p className="mt-6 text-base sm:text-lg text-warmtext/70 dark:text-darktext/70 leading-relaxed italic max-w-xl mx-auto">
               &ldquo;I used to sit down to study, and after a while I&apos;d get restless and just close everything &mdash; no real record of how long I&apos;d actually studied, or what I&apos;d covered. I built studylog to keep myself accountable: track my focus time, see my streaks, and actually know where my hours are going. If you&apos;ve ever felt the same way, I hope this helps you too.&rdquo;
             </p>
             <p className="mt-6 text-xs font-bold text-warmtext/35 dark:text-darktext/35 uppercase tracking-widest">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useDashboard } from '@/context/DashboardContext'
 import {
   BookOpen,
@@ -34,7 +34,7 @@ const DURATION_PRESETS = [
 ]
 
 export default function QuickAddForm({ onAddSession, prefilledDuration, onClearPrefill }: QuickAddFormProps) {
-  const { sessions, customSubjects, addCustomSubject } = useDashboard()
+  const { allSubjects, addCustomSubject } = useDashboard()
 
   const [subject, setSubject] = useState('')
   const [isAddingSubject, setIsAddingSubject] = useState(false)
@@ -48,13 +48,8 @@ export default function QuickAddForm({ onAddSession, prefilledDuration, onClearP
   const [timestamp, setTimestamp] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  // ── 1. Real User Created Subjects ──
-  const allUserSubjects = useMemo(() => {
-    const set = new Set<string>()
-    customSubjects.forEach((s) => s && s.trim() && set.add(s.trim()))
-    sessions.forEach((s) => s.subject && s.subject.trim() && set.add(s.subject.trim()))
-    return Array.from(set)
-  }, [customSubjects, sessions])
+  // Unified list of all user subjects/sections across the entire app
+  const allUserSubjects = allSubjects
 
   const handleCreateCustomSubject = () => {
     const trimmed = newSubjectInput.trim()

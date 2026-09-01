@@ -2,10 +2,32 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useDashboard } from '@/context/DashboardContext'
-import { Plus, Search, Trash2, Loader, Check, AlertCircle, FileText, Folder, X } from 'lucide-react'
+import {
+  Plus,
+  Search,
+  Trash2,
+  Loader,
+  Check,
+  AlertCircle,
+  FileText,
+  Folder,
+  X,
+  Clock,
+  Calendar
+} from 'lucide-react'
+import CustomSelect from '@/components/CustomSelect'
 
 export default function NotesPage() {
-  const { notes, handleAddNote, handleUpdateNoteState, handleUpdateNote, handleDeleteNote } = useDashboard()
+  const {
+    notes,
+    sessions,
+    allSubjects,
+    addCustomSubject,
+    handleAddNote,
+    handleUpdateNoteState,
+    handleUpdateNote,
+    handleDeleteNote,
+  } = useDashboard()
 
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -72,23 +94,14 @@ export default function NotesPage() {
       return
     }
 
-    console.log('[Autosave] Change detected in editor! Starting 1.2s timer...', {
-      noteId: activeNote.id,
-      title: localTitle !== lastSyncedValues.current.title ? `"${lastSyncedValues.current.title}" -> "${localTitle}"` : 'unchanged',
-      content: localContent !== lastSyncedValues.current.content ? 'modified' : 'unchanged',
-      category: localCategory !== lastSyncedValues.current.category ? `"${lastSyncedValues.current.category}" -> "${localCategory}"` : 'unchanged',
-    })
-
     setSaveStatus('saving')
     const timer = setTimeout(async () => {
-      console.log('[Autosave] Timer expired! Sending database update to Supabase...', activeNote.id)
       try {
         await handleUpdateNote(activeNote.id, {
           title: localTitle,
           content: localContent,
           category: localCategory,
         })
-        console.log('[Autosave] Save successful for note:', activeNote.id)
         
         lastSyncedValues.current = {
           title: localTitle,
@@ -103,7 +116,6 @@ export default function NotesPage() {
     }, 1200)
 
     return () => {
-      console.log('[Autosave] Cleaning up/cancelling previous timer.')
       clearTimeout(timer)
     }
   }, [localTitle, localContent, localCategory, activeNote, handleUpdateNote])
@@ -132,7 +144,6 @@ export default function NotesPage() {
   const handleCreateNewNote = async () => {
     // Flush current note edits if unsaved
     if (saveStatus === 'saving' && activeNoteId) {
-      console.log('[CreateNote] Flushing unsaved changes before creating note...')
       try {
         await handleUpdateNote(activeNoteId, {
           title: localTitle,
@@ -161,7 +172,6 @@ export default function NotesPage() {
   const handleSelectNote = async (noteId: string) => {
     // Flush current note edits immediately before switching
     if (saveStatus === 'saving' && activeNoteId) {
-      console.log('[SelectNote] Flushing unsaved changes before switching notes...')
       try {
         await handleUpdateNote(activeNoteId, {
           title: localTitle,
@@ -196,10 +206,10 @@ export default function NotesPage() {
     }
   }
 
-  // Get list of unique categories used across all notes
+  // Unified list of unique categories used across all notes, sessions, and custom subjects
   const uniqueCategories = Array.from(
-    new Set(notes.map((n) => n.category || 'General'))
-  ).sort()
+    new Set(['General', ...allSubjects, ...notes.map((n) => n.category || 'General')])
+  ).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
 
   const filterOptions = ['All', ...uniqueCategories]
 
@@ -211,7 +221,7 @@ export default function NotesPage() {
 
     const matchesCategory =
       selectedCategoryFilter === 'All' ||
-      (n.category || 'General') === selectedCategoryFilter
+      (n.category || 'General').toLowerCase().trim() === selectedCategoryFilter.toLowerCase().trim()
 
     return matchesSearch && matchesCategory
   })
@@ -229,6 +239,21 @@ export default function NotesPage() {
     })
   }
 
+  const formatFullDateTime = (isoString: string) => {
+    try {
+      const date = new Date(isoString)
+      return date.toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      })
+    } catch {
+      return isoString
+    }
+  }
+
   const getCategoryColor = (cat: string) => {
     const c = cat.toLowerCase().trim()
     if (c === 'general') return 'bg-slate-100 text-slate-700 dark:bg-white/5 dark:text-darktext/60 border-slate-200/50 dark:border-white/5'
@@ -239,13 +264,21 @@ export default function NotesPage() {
     return 'bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400 border-purple-200/40 dark:border-purple-500/10'
   }
 
+  // Linked study session for the active note
+  const matchingSessions = sessions.filter(
+    (s) =>
+      (s.section && localCategory && s.section.toLowerCase().trim() === localCategory.toLowerCase().trim()) ||
+      (s.subject && localCategory && s.subject.toLowerCase().trim() === localCategory.toLowerCase().trim())
+  )
+  const latestSession = matchingSessions.length > 0 ? matchingSessions[0] : null
+
   return (
     <div className="space-y-6 w-full h-[calc(100vh-130px)] flex flex-col">
       {/* Header */}
       <div className="shrink-0">
         <h1 className="text-2xl font-bold tracking-tight text-warmtext dark:text-darktext font-display">Study Notepad</h1>
         <p className="text-warmtext/50 dark:text-darktext/50 text-xs mt-0.5">
-          Organize your takeaways by categories and study notes. Auto-saves changes.
+          Organize your takeaways by categories and section notes. Auto-saves changes across all sections.
         </p>
       </div>
 
@@ -276,24 +309,17 @@ export default function NotesPage() {
               <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-warmtext/40 dark:text-darktext/40" />
             </div>
 
-            {/* Category Dropdown Filter */}
-            <div className="relative">
-              <select
-                value={selectedCategoryFilter}
-                onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                className="w-full pl-9 pr-8 py-1.5 border border-warmborder dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-warmbg dark:bg-white/5 text-warmtext/80 dark:text-darktext/80 text-xs appearance-none cursor-pointer font-semibold transition-colors duration-300"
-              >
-                {filterOptions.map((cat) => (
-                  <option key={cat} value={cat}>
-                    Category: {cat}
-                  </option>
-                ))}
-              </select>
-              <Folder className="absolute left-3 top-2.5 h-3.5 w-3.5 text-warmtext/40 dark:text-darktext/40 pointer-events-none" />
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-warmtext/40 dark:text-darktext/40 text-[9px] font-bold">
-                ▼
-              </div>
-            </div>
+            {/* Category CustomSelect Filter */}
+            <CustomSelect
+              value={selectedCategoryFilter}
+              onChange={(val) => setSelectedCategoryFilter(val)}
+              options={filterOptions.map((cat) => ({
+                value: cat,
+                label: `Category: ${cat}`,
+              }))}
+              prefixIcon={<Folder className="h-3.5 w-3.5" />}
+              aria-label="Filter notes by category"
+            />
           </div>
 
           {/* Notes Scrollable Rows */}
@@ -428,81 +454,102 @@ export default function NotesPage() {
                 />
               </div>
 
-              {/* Category selector / creator inline toolbar */}
-              <div className="px-6 pb-4 border-b border-warmborder/40 dark:border-white/5 flex flex-wrap items-center gap-2.5 shrink-0 text-xs text-warmtext/50 dark:text-darktext/50 select-none">
-                <span className="font-bold text-warmtext/40 dark:text-darktext/40 uppercase tracking-widest text-[9px]">
-                  Category:
-                </span>
+              {/* Unified Category & Session Metadata Toolbar */}
+              <div className="px-6 py-2.5 bg-warmbg/40 dark:bg-white/[0.02] border-y border-warmborder/40 dark:border-white/5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-xs text-warmtext/60 dark:text-darktext/60 select-none">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="font-bold text-warmtext/40 dark:text-darktext/40 uppercase tracking-widest text-[9px]">
+                    Category:
+                  </span>
 
-                {isCreatingCategory ? (
-                  <div className="flex items-center gap-1.5 w-full max-w-[240px] animate-fade-in">
-                    <input
-                      type="text"
-                      placeholder="e.g. DSA, Physics..."
-                      value={customCategoryInput}
-                      onChange={(e) => setCustomCategoryInput(e.target.value)}
-                      className="px-2 py-0.5 border border-warmborder dark:border-white/15 rounded-lg bg-transparent text-warmtext dark:text-darktext text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none w-full"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
+                  {isCreatingCategory ? (
+                    <div className="flex items-center gap-1.5 w-full max-w-[220px] animate-fade-in">
+                      <input
+                        type="text"
+                        placeholder="e.g. DSA, Physics..."
+                        value={customCategoryInput}
+                        onChange={(e) => setCustomCategoryInput(e.target.value)}
+                        className="px-2 py-0.5 border border-warmborder dark:border-white/15 rounded-lg bg-transparent text-warmtext dark:text-darktext text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none w-full"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const val = customCategoryInput.trim() || 'General'
+                            if (val !== 'General') addCustomSubject(val)
+                            handleCategoryChange(val)
+                            setIsCreatingCategory(false)
+                            setCustomCategoryInput('')
+                          }
+                        }}
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
                           const val = customCategoryInput.trim() || 'General'
+                          if (val !== 'General') addCustomSubject(val)
                           handleCategoryChange(val)
                           setIsCreatingCategory(false)
                           setCustomCategoryInput('')
-                        }
-                      }}
-                      autoFocus
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const val = customCategoryInput.trim() || 'General'
-                        handleCategoryChange(val)
-                        setIsCreatingCategory(false)
-                        setCustomCategoryInput('')
-                      }}
-                      className="p-1 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded shrink-0"
-                      title="Save custom category"
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsCreatingCategory(false)
-                        setCustomCategoryInput('')
-                      }}
-                      className="p-1 text-warmtext/40 dark:text-darktext/40 hover:bg-warmbg dark:hover:bg-white/5 rounded shrink-0"
-                      title="Cancel custom category"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5">
-                    <select
-                      value={localCategory}
-                      onChange={(e) => {
-                        if (e.target.value === '__new__') {
-                          setIsCreatingCategory(true)
+                        }}
+                        className="p-1 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded shrink-0"
+                        title="Save custom category"
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCreatingCategory(false)
                           setCustomCategoryInput('')
-                        } else {
-                          handleCategoryChange(e.target.value)
-                        }
-                      }}
-                      className="px-2 py-0.5 border border-warmborder dark:border-white/15 rounded-lg bg-transparent text-warmtext dark:text-darktext text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none cursor-pointer"
-                    >
-                      {uniqueCategories.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
-                      {!uniqueCategories.includes(localCategory) && (
-                        <option value={localCategory}>{localCategory}</option>
-                      )}
-                      <option value="__new__">+ Add custom...</option>
-                    </select>
-                  </div>
-                )}
+                        }}
+                        className="p-1 text-warmtext/40 dark:text-darktext/40 hover:bg-warmbg dark:hover:bg-white/5 rounded shrink-0"
+                        title="Cancel custom category"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-48">
+                      <CustomSelect
+                        value={localCategory}
+                        onChange={(val) => handleCategoryChange(val)}
+                        options={uniqueCategories.map((cat) => ({
+                          value: cat,
+                          label: cat,
+                        }))}
+                        actionOption={{
+                          value: '__new__',
+                          label: '+ Add custom...',
+                          onSelect: () => {
+                            setIsCreatingCategory(true)
+                            setCustomCategoryInput('')
+                          },
+                        }}
+                        className="py-1 bg-transparent border-warmborder dark:border-white/15 text-xs font-medium"
+                        aria-label="Select note category"
+                      />
+                    </div>
+                  )}
+
+                  {/* Linked Study Session Metadata */}
+                  {latestSession ? (
+                    <div className="flex items-center gap-1.5 text-[11px] font-medium text-purple-600 dark:text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2.5 py-0.5 rounded-full">
+                      <Clock className="h-3 w-3 shrink-0" />
+                      <span>
+                        Linked Session: {formatFullDateTime(latestSession.timestamp)} ({matchingSessions.length} {matchingSessions.length === 1 ? 'log' : 'logs'})
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-[11px] font-medium text-warmtext/50 dark:text-darktext/40 bg-warmbg dark:bg-white/5 border border-warmborder dark:border-white/10 px-2.5 py-0.5 rounded-full">
+                      <Folder className="h-3 w-3 shrink-0" />
+                      <span>Section Takeaways</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Last Updated Date & Time */}
+                <div className="flex items-center gap-1.5 text-[11px] font-medium text-warmtext/50 dark:text-darktext/40">
+                  <Calendar className="h-3 w-3" />
+                  <span>Last updated: {formatFullDateTime(activeNote.updated_at || activeNote.created_at)}</span>
+                </div>
               </div>
 
               {/* Content Textarea */}
@@ -511,7 +558,7 @@ export default function NotesPage() {
                   placeholder="Start writing study insights here..."
                   value={localContent}
                   onChange={(e) => handleContentChange(e.target.value)}
-                  className="w-full h-full text-sm text-warmtext/80 dark:text-darktext/80 border-none focus:ring-0 focus:outline-none bg-transparent resize-none p-0 leading-relaxed placeholder-warmtext/30 dark:placeholder-darktext/30"
+                  className="w-full h-full text-sm text-warmtext/80 dark:text-darktext/80 border-none focus:ring-0 focus:outline-none bg-transparent resize-none p-0 leading-relaxed placeholder-warmtext/30 dark:placeholder-darktext/30 font-sans"
                 />
               </div>
             </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useDashboard } from '@/context/DashboardContext'
 import {
   Play,
@@ -33,8 +33,7 @@ export default function Timer() {
     setTimerMode,
     setTimerTargetDuration,
     stopAndLogTimer,
-    sessions,
-    customSubjects,
+    allSubjects,
     addCustomSubject,
   } = useDashboard()
 
@@ -48,13 +47,8 @@ export default function Timer() {
   const mode = timerState.mode || 'timer'
   const targetDuration = timerState.targetDuration || 1500
 
-  // ── 1. User Created Subjects (No Hardcoded Placeholders) ──
-  const allUserSubjects = useMemo(() => {
-    const set = new Set<string>()
-    customSubjects.forEach((s) => s && s.trim() && set.add(s.trim()))
-    sessions.forEach((s) => s.subject && s.subject.trim() && set.add(s.subject.trim()))
-    return Array.from(set)
-  }, [customSubjects, sessions])
+  // Unified list of all user subjects/sections across the entire app
+  const allUserSubjects = allSubjects
 
   // Active subject fallback
   const activeSubject = subject || (allUserSubjects.length > 0 ? allUserSubjects[0] : '')
