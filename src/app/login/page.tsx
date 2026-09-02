@@ -3,7 +3,16 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
-import { BookOpen, AlertCircle, Loader2, Mail, Lock, User, CheckCircle, ChevronLeft } from 'lucide-react'
+import {
+  BookOpen,
+  AlertCircle,
+  Loader2,
+  Mail,
+  Lock,
+  User,
+  CheckCircle,
+  ChevronLeft,
+} from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
 
@@ -50,14 +59,21 @@ function LoginForm() {
     setErrorMsg(null)
     setSuccessMsg(null)
 
+    const cleanEmail = email.trim()
+
     if (activeTab === 'login') {
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: cleanEmail,
         password,
       })
 
       if (error) {
-        setErrorMsg(error.message)
+        const msg = error.message?.toLowerCase() || ''
+        if (msg.includes('invalid login credentials') || msg.includes('invalid credentials')) {
+          setErrorMsg('Invalid email or password. Please try again.')
+        } else {
+          setErrorMsg(error.message)
+        }
         setLoading(false)
       } else {
         router.push('/dashboard')
@@ -70,32 +86,46 @@ function LoginForm() {
         return
       }
 
+      // Sign up user (immediately confirmed & logged in)
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: cleanEmail,
         password,
         options: {
           data: {
             username: username.trim(),
             full_name: fullName.trim(),
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       })
 
       if (error) {
-        setErrorMsg(error.message)
+        if (
+          error.message?.toLowerCase().includes('already registered') ||
+          error.message?.toLowerCase().includes('user already exists')
+        ) {
+          setErrorMsg('An account with this email already exists. Please sign in instead.')
+        } else {
+          setErrorMsg(error.message)
+        }
         setLoading(false)
       } else {
+        // If session was returned, navigate straight to dashboard
         if (data.session) {
           router.push('/dashboard')
           router.refresh()
         } else {
-          setSuccessMsg('Registration successful! Please check your email to confirm your account.')
-          setEmail('')
-          setPassword('')
-          setUsername('')
-          setFullName('')
-          setLoading(false)
+          // If session wasn't automatically set, sign in immediately
+          const { error: signInErr } = await supabase.auth.signInWithPassword({
+            email: cleanEmail,
+            password,
+          })
+          if (signInErr) {
+            setErrorMsg(signInErr.message)
+            setLoading(false)
+          } else {
+            router.push('/dashboard')
+            router.refresh()
+          }
         }
       }
     }
@@ -153,7 +183,7 @@ function LoginForm() {
         </button>
       </div>
 
-      {/* Alerts */}
+      {/* Error Alert */}
       {errorMsg && (
         <div className="mb-5 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 rounded-xl text-sm sm:text-base flex items-start gap-2.5 animate-fade-in">
           <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
@@ -161,9 +191,11 @@ function LoginForm() {
         </div>
       )}
 
+      {/* Success Alert */}
       {successMsg && (
-        <div className="mb-5 p-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-xl text-sm sm:text-base animate-fade-in">
-          {successMsg}
+        <div className="mb-5 p-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-xl text-sm sm:text-base flex items-start gap-2.5 animate-fade-in">
+          <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" />
+          <span>{successMsg}</span>
         </div>
       )}
 
